@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador de planta de beneficio de oro · CIL 50 t/d</title>
+<style>
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --line:#d9dde3; --line2:#e8ebef; --ink:#1b2430; --ink2:#52606f; --ink3:#8793a1;
+  --side:#161e2b; --side2:#1f2a3b; --side-ink:#c9d3df; --gold:#b8860b; --goldbg:#fbf3dc; --blue:#2a78d6; --teal:#1baf7a;
+  --ok:#1a8a52; --okbg:#e5f5ec; --warn:#a86a00; --warnbg:#fff1d6; --err:#c62f2f; --errbg:#fde8e8;
+  --font:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,"DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit} button{cursor:pointer}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.app{display:grid;grid-template-columns:232px 1fr;grid-template-rows:auto 1fr;height:100vh}
+.side{grid-row:1/3;background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding:16px 10px;overflow:auto}
+.brand{padding:4px 8px 16px;border-bottom:1px solid #2a3649;margin-bottom:10px}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:.2px}.brand span{font-size:12px;color:#8fa0b4}
+.brand i{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gold);margin-right:8px;box-shadow:0 0 0 3px #3a2f10}
+.nav button{display:flex;width:100%;gap:10px;align-items:center;background:none;border:0;color:var(--side-ink);padding:9px 10px;border-radius:7px;text-align:left}
+.nav button:hover{background:var(--side2)} .nav button.on{background:#2b3a52;color:#fff;box-shadow:inset 3px 0 0 var(--gold)}
+.nav svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.side .foot{margin-top:auto;padding:12px 8px;font-size:12px;color:#8fa0b4;border-top:1px solid #2a3649}
+.top{display:flex;gap:10px;align-items:stretch;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.kp{padding:2px 14px 2px 0;margin-right:4px;border-right:1px solid var(--line2);min-width:108px}.kp:last-of-type{border-right:0}
+.kp small{display:block;color:var(--ink2);font-size:11.5px}.kp b{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}.kp u{text-decoration:none;color:var(--ink3);font-size:12px;margin-left:3px}
+.top .sp{flex:1}.chip{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600;border:1px solid transparent}
+.chip.ok{background:var(--okbg);color:var(--ok)}.chip.warn{background:var(--warnbg);color:var(--warn)}.chip.error{background:var(--errbg);color:var(--err)}
+.btn{background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 12px;font-weight:500}.btn:hover{border-color:#aab3be;background:#f7f8fa}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.pri:hover{background:#2c3949}.btn.sm{padding:3px 9px;font-size:12.5px}.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+main{overflow:auto;padding:18px 22px 40px}
+h1{font-size:22px;margin:0 0 4px;font-weight:600}h2{font-size:16px;margin:0 0 10px;font-weight:600}h3{font-size:14px;margin:14px 0 6px;font-weight:600}
+.lead{color:var(--ink2);margin:0 0 16px;max-width:76ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:12px;margin-bottom:14px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}.tile small{color:var(--ink2);display:block;font-size:12px}
+.tile b{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.tile u{text-decoration:none;color:var(--ink3);margin-left:4px;font-size:13px}.tile .d{font-size:12px;color:var(--ink3);margin-top:2px}
+.tile.hero{background:var(--goldbg);border-color:#ecd58c}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 9px;border-bottom:1px solid var(--line2);text-align:left;vertical-align:top}th{font-weight:600;color:var(--ink2);background:#f6f7f9;position:sticky;top:0;font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}tr:hover td{background:#fafbfc}
+.tw{overflow:auto;max-height:520px;border:1px solid var(--line2);border-radius:8px}
+.badge{display:inline-block;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:99px;white-space:nowrap}
+.b-DOC{background:#e1ecfb;color:#1c5cab}.b-RANGO{background:#e3f4ee;color:#0f7a55}.b-SUP{background:var(--warnbg);color:var(--warn)}.b-BIB{background:#ece8fb;color:#5442b8}.b-CAL{background:#f1e9fb;color:#7a3fb0}
+.grp{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:10px}.grp>summary{padding:10px 14px;font-weight:600;cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center}.grp>summary::-webkit-details-marker{display:none}
+.grp>summary:before{content:"▸";color:var(--ink3);transition:transform .15s}.grp[open]>summary:before{transform:rotate(90deg)}.grp .cnt{margin-left:auto;font-weight:400;font-size:12px;color:var(--ink3)}
+.prow{display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(150px,1.6fr) 98px 54px;gap:10px;align-items:center;padding:7px 14px;border-top:1px solid var(--line2)}
+.prow .lb{font-size:13px}.prow .lb small{display:block;color:var(--ink3);font-size:11.5px;line-height:1.3}.prow.ed .lb b{color:var(--gold)}
+.prow input[type=range]{width:100%;accent-color:var(--gold)} .prow input[type=number],.prow select{width:100%;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;font-variant-numeric:tabular-nums}
+.prow .un{font-size:12px;color:var(--ink2);display:flex;gap:4px;align-items:center;justify-content:space-between}.prow .un button{border:0;background:none;color:var(--ink3);padding:0 2px;font-size:15px}.prow .un button:hover{color:var(--gold)}
+.split{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}.stick{position:sticky;top:0}
+.fsw{position:relative;background:#fbfbfc;border:1px solid var(--line);border-radius:10px;overflow:auto}
+.fs{width:100%;min-width:760px;display:block}
+.node{cursor:pointer}.node .card{fill:#fff;stroke:#c8cfd8;stroke-width:1.2;filter:drop-shadow(0 1px 1.5px rgba(20,30,50,.12))}.node:hover .card,.node.sel .card{stroke:var(--gold);stroke-width:2.4}
+.node .ttl{font-size:13px;font-weight:600;fill:#fff}.node .num{font-size:13px;font-weight:700}.node .sub{font-size:11.5px;fill:#52606f}
+.node .ico .f{fill:#e8edf3;stroke:#3a4a5f;stroke-width:1.5;stroke-linejoin:round}.node .ico .s{fill:none;stroke:#3a4a5f;stroke-width:1.6;stroke-linecap:round}
+.node .kv{font-size:11.5px;fill:#1b2430}.node .kn{fill:#6b7684}.node .kx{font-weight:600;font-variant-numeric:tabular-nums}.node .ku{fill:#6b7684}
+.st-ok{fill:#2fbf71;stroke:#fff;stroke-width:1.5}.st-warn{fill:#f0a21a;stroke:#fff;stroke-width:1.5}.st-error{fill:#e0402f;stroke:#fff;stroke-width:1.5}
+.strm{cursor:pointer}.strm.sel path:nth-of-type(2){filter:drop-shadow(0 0 3px rgba(184,134,11,.9))}.lab text{font-size:11px;font-weight:600;fill:#1b2430;font-variant-numeric:tabular-nums}.lab{pointer-events:none}
+.flow{animation:fl 1.1s linear infinite}@keyframes fl{to{stroke-dashoffset:-16}}@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+.term{font-size:12px;fill:#52606f;font-weight:600}
+.fsbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.seg2{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.seg2 button{border:0;background:none;padding:5px 12px;border-right:1px solid var(--line2)}.seg2 button:last-child{border:0}.seg2 button.on{background:var(--ink);color:#fff}
+.lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink2)}.lgd i{display:inline-block;width:18px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.drawer{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.drawer header{padding:12px 14px;background:#f6f7f9;border-bottom:1px solid var(--line)}.drawer header b{font-size:15px}.drawer header small{display:block;color:var(--ink2)}
+.drawer .bd{padding:10px 14px;max-height:none;overflow:auto}.drawer h4{margin:14px 0 6px;font-size:12px;color:var(--ink2);font-weight:600}
+.tabs{display:flex;border-bottom:1px solid var(--line)}.tabs button{flex:1;background:none;border:0;padding:8px 4px;font-size:12.5px;color:var(--ink2);border-bottom:2px solid transparent}.tabs button.on{color:var(--ink);border-color:var(--gold);font-weight:600}
+.kvl{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:13px}.kvl span:nth-child(odd){color:var(--ink2)}.kvl span:nth-child(even){font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.flg{border-left:3px solid;padding:6px 9px;margin:6px 0;border-radius:0 6px 6px 0;font-size:12.5px}.flg.error{border-color:var(--err);background:var(--errbg)}.flg.warn{border-color:var(--warn);background:var(--warnbg)}.flg.info{border-color:var(--blue);background:#e9f1fc}.flg.ok{border-color:var(--ok);background:var(--okbg)}
+.vrow{display:grid;grid-template-columns:22px 1fr;gap:8px;padding:6px 0;border-top:1px solid var(--line2);font-size:13px}.vrow small{display:block;color:var(--ink2)}
+.ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}.ic.ok{background:var(--ok)}.ic.warn{background:#e29a12}.ic.error{background:var(--err)}.ic.info{background:var(--blue)}
+.chart{width:100%;height:auto;display:block}.chart .grid{stroke:#e8ebef}.chart .ax{font-size:11px;fill:#52606f}.chart .axt{font-size:11.5px;fill:#52606f;font-weight:500}.chart .axl{stroke:#aab3be}
+.cbox{position:relative}.ct{font-weight:600;margin:0 0 4px;font-size:13.5px}.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2);margin:0 0 4px;flex-wrap:wrap}.legend i,.tip i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.tip{display:none;position:absolute;pointer-events:none;background:#1b2430;color:#fff;border-radius:7px;padding:6px 9px;font-size:12px;z-index:5;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.stackbar{display:flex;height:22px;gap:2px;margin:6px 0 10px}.seg{height:100%;border-radius:3px}table.dist td{border:0;padding:3px 6px}table.dist i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+.eq{font-family:var(--mono);font-size:12.5px;background:#f6f7f9;border:1px solid var(--line2);border-radius:7px;padding:8px 10px;margin:6px 0;white-space:pre-wrap;overflow:auto}
+.note{color:var(--ink2);font-size:12.5px}.mono{font-family:var(--mono)}.tag{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap}.scn{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:8px 6px;border-top:1px solid var(--line2)}.scn.cur{background:var(--goldbg)}
+.dl{color:var(--ok)}.dl.neg{color:var(--err)}.dl.z{color:var(--ink3)}
+.empty{color:var(--ink3);padding:18px;text-align:center}
+@media(max-width:1100px){.app{grid-template-columns:64px 1fr}.nav button span,.brand span,.brand b,.side .foot{display:none}.split{grid-template-columns:1fr}.prow{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}.side{grid-row:auto;flex-direction:row;padding:6px;overflow:auto}.brand{display:none}.nav{display:flex}.fs{min-width:760px}}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><b><i></i>Planta de oro CIL</b><span>Simulador 50 t/d · UIS</span></div>
+    <nav class="nav" id="nav" aria-label="Secciones"></nav>
+    <div class="foot">Basado en Proyecto.pdf, Srithammavut (2008), Yahya et al. (2020) y Ray &amp; Ray.</div>
+  </aside>
+  <header class="top" id="top"></header>
+  <main id="main" tabindex="-1"></main>
+</div>
+<script>
+/* ============================================================================
+ * params.js — Registro de parámetros del simulador (única fuente de verdad).
+ * Cada parámetro declara: valor inicial, unidad, rango y ORIGEN del dato:
+ *   DOC  = valor explícito en Proyecto.pdf (o derivado directamente de él)
+ *   RANGO= valor elegido dentro de un rango que da Proyecto.pdf (Tabla 1 / §3)
+ *   SUP  = supuesto de simulación: NO hay dato en los documentos (editable)
+ *   BIB  = valor de la bibliografía aportada (Srithammavut 2008, Ray & Ray 2018)
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+  const P = [];
+  const add = (group, id, label, unit, def, min, max, step, src, ref, opts) =>
+    P.push(Object.assign({ group, id, label, unit, def, min, max, step, src, ref }, opts || {}));
+
+  /* ---------------- Alimentación ---------------- */
+  add('Alimentación', 'feedTpd', 'Mineral seco alimentado', 't/d', 50, 10, 150, 1, 'DOC', 'Proyecto §3.3: 2,08 t/h × 24 h ≈ 50 t/d');
+  add('Alimentación', 'opHours', 'Horas de operación de la planta', 'h/d', 24, 8, 24, 1, 'DOC', 'Proyecto §3.3: 2,08 t/h → 50 t/d implica 24 h/d');
+  add('Alimentación', 'headGrade', 'Ley de cabeza de oro', 'g/t', 10, 1, 30, 0.1, 'DOC', 'Proyecto §3.3: 500 g/d ÷ 50 t/d = 10 g/t (nota: §2 cita 1–5 g/t como típico)');
+  add('Alimentación', 'moisture', 'Humedad del mineral (ROM)', '%', 5, 1, 12, 0.5, 'RANGO', 'Proyecto Tabla 1: humedad 3–8 %');
+  add('Alimentación', 'solidSG', 'Gravedad específica del sólido', 't/m³', 2.7, 2.4, 3.2, 0.05, 'DOC', 'Derivada de Proyecto §3.3: 2,08 t/h y 3,9 m³/h de pulpa (con 3,13 m³/h de agua)');
+  add('Alimentación', 'gravFree', 'Oro libre recuperable por gravimetría', '% del oro', 0, 0, 60, 1, 'SUP', 'Sin dato en los documentos. Caso base fiel al Proyecto: 0 % (los 500 g/d entran al CIL)');
+  add('Alimentación', 'sulfAu', 'Oro asociado a sulfuros', '% del oro', 0, 0, 60, 1, 'SUP', 'Sin dato en los documentos. Caso base: 0 %');
+  add('Alimentación', 'sulfLeach', 'Lixiviabilidad del oro en sulfuros', '%', 100, 0, 100, 5, 'SUP', 'Sin dato. Solo actúa si el oro en sulfuros > 0');
+
+  /* ---------------- Conminución ---------------- */
+  add('Conminución', 'romF80', 'F80 de la alimentación a trituración', 'mm', 300, 50, 800, 10, 'SUP', 'Proyecto Tabla 1: ROM < 600 mm a la mandíbula; F80 ≈ ½ de la parrilla (300–600 mm)');
+  add('Conminución', 'jawCSS', 'Abertura de descarga de la mandíbula', 'mm', 50, 40, 100, 5, 'RANGO', 'Proyecto Tabla 1: 40–100 mm');
+  add('Conminución', 'screenAp', 'Malla de la criba vibratoria', 'mm', 25, 12, 25, 1, 'RANGO', 'Proyecto Tabla 1: 12–25 mm');
+  add('Conminución', 'screenEff', 'Eficiencia de la criba', '%', 90, 85, 95, 1, 'RANGO', 'Proyecto Tabla 1: 85–95 %');
+  add('Conminución', 'crushCap', 'Capacidad de la trituradora', 't/h', 20, 5, 60, 1, 'SUP', 'Sin dato de capacidad en los documentos');
+  add('Conminución', 'crushHours', 'Horas de trituración por día', 'h/d', 8, 4, 24, 1, 'SUP', 'Tolva de finos de 8–24 h desacopla trituración y molienda (Tabla 1)');
+  add('Conminución', 'wi', 'Índice de trabajo de Bond (Wi)', 'kWh/t', 14, 8, 22, 0.5, 'SUP', 'Sin dato en los documentos (supuesto típico, respondido por el usuario)');
+  add('Conminución', 'p80', 'P80 objetivo de molienda', 'µm', 75, 40, 200, 5, 'DOC', 'Proyecto §3.1: P80 = 75 µm (Tabla 1: 75–150 µm)');
+  add('Conminución', 'rrN', 'Módulo de distribución Rosin–Rammler', '–', 1.2, 0.8, 2.0, 0.05, 'SUP', 'Forma de la distribución granulométrica del producto de molienda');
+  add('Conminución', 'millPower', 'Potencia instalada del molino de bolas', 'kW', 45, 15, 150, 1, 'SUP', 'Sin dato en los documentos');
+  add('Conminución', 'millSolids', 'Sólidos en la descarga del molino', '%', 70, 60, 80, 1, 'RANGO', 'Proyecto Tabla 1: 65–75 %');
+  add('Conminución', 'cycCL', 'Carga circulante del molino', '%', 200, 100, 350, 10, 'RANGO', 'Proyecto Tabla 1: 150–300 %');
+  add('Conminución', 'cycFeedSolids', 'Sólidos en la alimentación al hidrociclón', '%', 50, 25, 60, 1, 'RANGO', 'Proyecto Tabla 1: 30–50 %');
+  add('Conminución', 'cycOFSolids', 'Sólidos en el rebose del hidrociclón (pulpa)', '%', 35, 25, 50, 1, 'RANGO', 'Proyecto Tabla 1: 30–45 %');
+
+  /* ---------------- Gravimetría y flotación ---------------- */
+  add('Gravimetría y flotación', 'knelsonMass', 'Masa a concentrado Knelson', '% de la alim.', 0.3, 0.1, 0.5, 0.05, 'RANGO', 'Proyecto Tabla 1: 0,1–0,5 % de la masa');
+  add('Gravimetría y flotación', 'knelsonRec', 'Recuperación Knelson del oro libre', '%', 50, 30, 70, 5, 'RANGO', 'Proyecto Tabla 1: 30–70 % del oro libre');
+  add('Gravimetría y flotación', 'wilfleyRec', 'Recuperación mesa Wilfley (del Knelson)', '%', 90, 50, 99, 1, 'SUP', 'Sin dato en los documentos');
+  add('Gravimetría y flotación', 'wilfleyMass', 'Masa del concentrado Wilfley (del Knelson)', '%', 10, 2, 50, 1, 'SUP', 'Sin dato en los documentos');
+  add('Gravimetría y flotación', 'flotSolids', 'Sólidos en flotación', '%', 30, 25, 35, 1, 'RANGO', 'Proyecto Tabla 1: 25–35 %');
+  add('Gravimetría y flotación', 'flotPull', 'Masa a concentrado de flotación', '% de la alim.', 2, 0.5, 10, 0.5, 'SUP', 'Sin dato en los documentos');
+  add('Gravimetría y flotación', 'flotAuRec', 'Recuperación de oro en sulfuros (flotación)', '%', 85, 50, 98, 1, 'SUP', 'Sin dato en los documentos');
+  add('Gravimetría y flotación', 'xanthate', 'Dosis de xantato', 'g/t', 60, 20, 100, 5, 'RANGO', 'Proyecto Tabla 1: 20–100 g/t');
+  add('Gravimetría y flotación', 'mibc', 'Dosis de espumante MIBC', 'g/t', 25, 10, 40, 5, 'RANGO', 'Proyecto Tabla 1: 10–40 g/t');
+  add('Gravimetría y flotación', 'cakeConcMoist', 'Humedad torta filtro prensa (concentrado)', '%', 12, 8, 15, 1, 'RANGO', 'Proyecto Tabla 1: 8–15 %');
+  add('Gravimetría y flotación', 'thickUF', 'Sólidos en la descarga del espesador', '%', 45, 45, 60, 1, 'RANGO', 'Proyecto Tabla 1: 45–60 % (el CIL pide 40 %: se diluye después)');
+  add('Gravimetría y flotación', 'floc', 'Dosis de floculante', 'g/t', 25, 10, 40, 5, 'RANGO', 'Proyecto Tabla 1: 10–40 g/t');
+  add('Gravimetría y flotación', 'settleRate', 'Velocidad de sedimentación de diseño', 'm/h', 1, 0.5, 5, 0.1, 'RANGO', 'Proyecto Tabla 1: 0,5–5 m/h (dimensiona el área del espesador)');
+
+  /* ---------------- Lixiviación CIL ---------------- */
+  add('Lixiviación CIL', 'cilSolids', 'Sólidos en la pulpa de lixiviación', '%', 40, 30, 55, 1, 'DOC', 'Proyecto §3.1: 40 % (rango 35–50 %)');
+  add('Lixiviación CIL', 'nTanks', 'Número de tanques de lixiviación/CIL', '–', 6, 3, 8, 1, 'DOC', 'Proyecto §3.4: 6 tanques', { int: true });
+  add('Lixiviación CIL', 'tankVolEff', 'Volumen efectivo por tanque', 'm³', 15.7, 5, 40, 0.1, 'DOC', 'Proyecto §3.3: 15,7 m³');
+  add('Lixiviación CIL', 'tankVolGeom', 'Volumen geométrico por tanque (2,8 m × 3,2 m)', 'm³', 19.7, 5, 60, 0.1, 'DOC', 'Proyecto §3.4: ≈ 19,7 m³');
+  add('Lixiviación CIL', 'tauMode', 'Modo de tiempo de residencia', '', 'equipo', null, null, null, 'DOC', 'equipo = tanques instalados (τ resulta del caudal); objetivo = τ manual', { choices: ['equipo', 'objetivo'] });
+  add('Lixiviación CIL', 'tauTarget', 'Tiempo de residencia objetivo (modo objetivo)', 'h', 24, 6, 48, 1, 'DOC', 'Proyecto §3.1: 24 h (6 × 4 h); Tabla 1: 24–48 h');
+  add('Lixiviación CIL', 'nacn', 'Concentración de NaCN', 'ppm', 400, 100, 800, 10, 'DOC', 'Proyecto §3.1: 300–500 ppm; 0,6 kg/t ÷ 1,5 m³/t de agua = 400 g/m³');
+  add('Lixiviación CIL', 'ph', 'pH de la pulpa', '–', 11, 9, 12.5, 0.1, 'DOC', 'Proyecto §3.1: 10,5–11,5 (nunca < 10,5)');
+  add('Lixiviación CIL', 'dox', 'Oxígeno disuelto objetivo', 'mg/L', 8, 2, 40, 0.5, 'DOC', 'Proyecto §3.1: 6–8 mg/L (saturación con aire ≈ 8,2 mg/L)');
+  add('Lixiviación CIL', 'oxidant', 'Oxidante', '', 'aire', null, null, null, 'DOC', 'Proyecto §3.2: aire u oxígeno', { choices: ['aire', 'oxígeno'] });
+  add('Lixiviación CIL', 'o2Purity', 'Pureza de O₂ (si oxígeno)', '% vol', 90, 50, 100, 1, 'SUP', 'Sin dato. Solo si el oxidante es oxígeno');
+  add('Lixiviación CIL', 'temp', 'Temperatura de la pulpa', '°C', 25, 5, 60, 1, 'DOC', 'Proyecto §3.1: ambiente 20–25 °C');
+  add('Lixiviación CIL', 'altitude', 'Altitud de la planta', 'm s. n. m.', 0, 0, 3500, 50, 'DOC', 'Proyecto §3.1: saturación referida a nivel del mar');
+  add('Lixiviación CIL', 'carbonConc', 'Carbón activado en pulpa', 'g/L', 10, 5, 25, 1, 'DOC', 'Proyecto §3.1: 10–15 g/L; inventario 780 kg = 10 g/L en tanques 2–6');
+  add('Lixiviación CIL', 'carbonTanks', 'Tanques con carbón (últimos)', '–', 5, 1, 8, 1, 'DOC', 'Proyecto §3.3: carbón en los tanques 2 a 6', { int: true });
+  add('Lixiviación CIL', 'carbonXfer', 'Carbón transferido a elución', 'kg/d', 90, 20, 400, 5, 'SUP', 'Sin dato: equivale a 5 kg Au/t C (rango 1–10 kg/t, Tabla 1)');
+  add('Lixiviación CIL', 'carbonMakeup', 'Reposición de carbón', 'g/t', 40, 10, 100, 5, 'DOC', 'Proyecto §3.2: ≈ 40 g/t');
+  add('Lixiviación CIL', 'kAds', 'Constante de adsorción de Au(CN)₂⁻ en carbón', 'L/(g·h)', 0.3, 0.02, 2, 0.02, 'SUP', 'Cinética de primer orden (Marsden & House; Srithammavut Ec. 35–36). Valor no dado');
+  add('Lixiviación CIL', 'qMax', 'Carga máxima de oro en carbón', 'kg Au/t C', 20, 5, 30, 1, 'BIB', 'Srithammavut §5.2: cargas de planta hasta 20 000 g/t');
+  add('Lixiviación CIL', 'agitKW', 'Potencia por agitador', 'kW', 6.5, 5.5, 7.5, 0.1, 'RANGO', 'Proyecto §3.4: 5,5–7,5 kW');
+  add('Lixiviación CIL', 'limeDose', 'Cal a pH de diseño', 'kg/t', 1.5, 0.5, 4, 0.1, 'DOC', 'Proyecto §3.2: 1,5 kg/t (ajustar por prueba)');
+  add('Lixiviación CIL', 'pbNitrate', 'Nitrato de plomo (opcional)', 'g/t', 0, 0, 200, 10, 'DOC', 'Proyecto §3.2: opcional 100–200 g/t. SIN efecto cinético en el modelo (no hay dato)');
+  add('Lixiviación CIL', 'cnSideFrac', 'Parte del NaCN que reacciona con cianicidas', '% del consumo', 35, 10, 60, 5, 'SUP', 'Proyecto §3.3 no desglosa los 30 kg/d: se asigna una partición supuesta');
+
+  /* ---------------- Recuperación ---------------- */
+  add('Recuperación del oro', 'eluEff', 'Eficiencia de elución por ciclo', '%', 98, 80, 100, 1, 'SUP', 'Sin dato. El carbón eluido recircula con la carga residual');
+  add('Recuperación del oro', 'richAu', 'Oro en solución rica', 'mg/L', 150, 50, 300, 10, 'RANGO', 'Proyecto Tabla 1: 50–300 mg/L');
+  add('Recuperación del oro', 'ewEff', 'Eficiencia de electroobtención por paso', '%', 97, 90, 99, 1, 'RANGO', 'Proyecto Tabla 1: 90–99 % (pobre < 5 mg/L)');
+  add('Recuperación del oro', 'eluTemp', 'Temperatura de elución (Zadra)', '°C', 92.5, 90, 140, 0.5, 'RANGO', 'Proyecto Tabla 1: Zadra 90–95 °C; AARL 110–140 °C');
+  add('Recuperación del oro', 'downRec', 'Recuperación neta desorción–EW–fundición', '%', 100, 90, 100, 0.5, 'SUP', 'Sin pérdidas documentadas: la solución pobre y el carbón eluido recirculan');
+  add('Recuperación del oro', 'doreFine', 'Ley de la barra doré', '% Au', 80, 60, 95, 1, 'RANGO', 'Proyecto §2: 60–95 % de oro');
+  add('Recuperación del oro', 'ewVolt', 'Voltaje de celda EW', 'V', 3, 2, 4, 0.1, 'RANGO', 'Proyecto Tabla 1: 2–4 V');
+  add('Recuperación del oro', 'ewAmp', 'Corriente por celda EW', 'A', 300, 100, 500, 10, 'RANGO', 'Proyecto Tabla 1: 100–500 A');
+  add('Recuperación del oro', 'ewCells', 'Celdas de electroobtención', '–', 2, 1, 6, 1, 'SUP', 'Sin dato', { int: true });
+
+  /* ---------------- Relaves y agua ---------------- */
+  add('Relaves y agua', 'detoxRatio', 'Dosis SO₂ : CN (INCO)', 'g/g', 4, 2, 6, 0.1, 'RANGO', 'Proyecto Tabla 1: 3–5 g SO₂/g CN');
+  add('Relaves y agua', 'detoxTime', 'Tiempo de destrucción de cianuro', 'min', 60, 15, 150, 5, 'RANGO', 'Proyecto Tabla 1: 30–120 min');
+  add('Relaves y agua', 'cnLimit', 'Límite CNWAD en el efluente', 'mg/L', 50, 1, 100, 1, 'DOC', 'Proyecto Tabla 1: meta CNWAD < 50 mg/L (o el permiso)');
+  add('Relaves y agua', 'tailMoist', 'Humedad del relave filtrado', '%', 17.5, 15, 20, 0.5, 'RANGO', 'Proyecto Tabla 1: 15–20 %');
+  add('Relaves y agua', 'waterRecycle', 'Recirculación de agua recuperable', '%', 80, 0, 100, 5, 'SUP', 'El Proyecto dice que el agua se recircula, sin fracción (respondido por el usuario)');
+  add('Relaves y agua', 'opDays', 'Días de operación al año', 'd/año', 330, 200, 365, 5, 'SUP', 'Solo para anualizar la producción');
+
+  GS.PARAMS = P;
+  GS.PARAM_BY_ID = Object.fromEntries(P.map(p => [p.id, p]));
+  GS.defaults = () => Object.fromEntries(P.map(p => [p.id, p.def]));
+  GS.GROUPS = [...new Set(P.map(p => p.group))];
+  GS.SRC_LABEL = { DOC: 'Documento', RANGO: 'Rango del doc.', SUP: 'Supuesto', BIB: 'Bibliografía', CAL: 'Calibrado' };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * engine.js — Motor de cálculo de la planta aurífera (balances + cinética CIL)
+ * Todas las ecuaciones están descritas en docs/ECUACIONES.md y en la pestaña
+ * "Modelo y ecuaciones" de la aplicación. Sin dependencias: corre en navegador
+ * y en Node (tests/run_tests.js).
+ * Unidades: masa t/d (base seca) · agua m³/d · oro g/d · tiempo h · conc. mg/L
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+  const MW = { Au: 196.967, NaCN: 49.007, CN: 26.017, O2: 31.998, SO2: 64.066 };
+  const R_GAS = 8.314;
+
+  /* ---------- utilidades físicas ---------- */
+  // Saturación de O2 en agua (Benson–Krause/Weiss, 1 atm, aire) × presión × fracción de O2 del gas
+  function doSat(T_C, alt_m, yO2) {
+    const T = T_C + 273.15;
+    const ln = -139.34411 + 1.575701e5 / T - 6.642308e7 / (T * T) + 1.2438e10 / Math.pow(T, 3) - 8.621949e11 / Math.pow(T, 4);
+    const P = 101.325 * Math.pow(1 - 2.25577e-5 * alt_m, 5.25588);
+    return Math.exp(ln) * (P / 101.325) * (yO2 / 0.2095);
+  }
+  const visc = (T_C) => 2.414e-5 * Math.pow(10, 247.8 / (T_C + 273.15 - 140)); // Pa·s (Vogel)
+  const alphaCN = (pH) => 1 / (1 + Math.pow(10, 9.31 - pH)); // fracción CN⁻ (pKa HCN = 9,31)
+
+  // Distribución Rosin–Rammler en clases de tamaño (µm). Devuelve [{d, w}]
+  const EDGES = [0, 10, 20, 30, 45, 63, 75, 90, 106, 150, 212, 300, 425, 600, 1000];
+  function psd(p80, n) {
+    const x0 = p80 / Math.pow(-Math.log(0.2), 1 / n);
+    const cdf = (x) => 1 - Math.exp(-Math.pow(x / x0, n));
+    const out = [];
+    for (let i = 0; i < EDGES.length - 1; i++) {
+      const lo = EDGES[i], hi = EDGES[i + 1];
+      out.push({ lo, hi, d: lo === 0 ? 6 : Math.sqrt(lo * hi), w: cdf(hi) - cdf(lo) });
+    }
+    const s = out.reduce((a, c) => a + c.w, 0);
+    out.forEach((c) => (c.w /= s));
+    return { classes: out, cdf, x0 };
+  }
+
+  const M_EXP = 0.2; // exponente de la fracción no lixiviable vs tamaño (supuesto calibrado, ver docs)
+
+  /* ---------- cinética: cadena de CSTR con ley de 2.º orden en oro (Ec. 25 / orden ≈ 2 de la tesis) ---------- */
+  function mtFactor(T, ph, nacn, dox, alt, yO2) {
+    const doEff = Math.min(dox, doSat(T, alt, yO2));
+    const cn = (nacn / 1000 / MW.NaCN) * alphaCN(ph); // mol/L CN⁻ libre
+    const o2 = doEff / 1000 / MW.O2; // mol/L
+    const sc = (T + 273.15) / 298.15 * (visc(25) / visc(T));
+    const Dcn = 1.83e-5 * sc, Do2 = 2.76e-5 * sc; // Ray & Ray cap. 5 (Ec. 5.23)
+    return { f: (Dcn * Do2 * cn * o2) / (Dcn * cn + 4 * Do2 * o2), doEff, cn, o2 }; // 2/δ constante, se absorbe en K
+  }
+  const MT_REF = mtFactor(25, 11, 400, 8, 0, 0.2095).f;
+
+  function leachChain(classes, C0, fInfFn, kFn, tau, N) {
+    // devuelve gradiente medio de sólidos tras cada tanque (g/t) y por clase
+    const state = classes.map((c) => {
+      const fi = fInfFn(c);
+      return { Cinf: fi * C0, D: (1 - fi) * C0, k: kFn(c), w: c.w };
+    });
+    const prof = [C0];
+    for (let i = 0; i < N; i++) {
+      let tot = 0;
+      for (const s of state) {
+        const a = tau * s.k;
+        s.D = a > 1e-12 ? (-1 + Math.sqrt(1 + 4 * a * s.D)) / (2 * a) : s.D;
+        tot += s.w * (s.Cinf + s.D);
+      }
+      prof.push(tot);
+    }
+    return prof;
+  }
+
+  /* ---------- modelo principal ---------- */
+  function simulate(p, calIn) {
+    const cal = calIn || GS.CAL || { K: 0.01, cf: 0.04 };
+    const flags = []; // {lvl:'error'|'warn'|'info', id, msg}
+    const flag = (lvl, id, msg) => flags.push({ lvl, id, msg });
+    const H = p.opHours, F = p.feedTpd, Fh = F / H;
+    const m = p.moisture / 100;
+    const r = { p, flags };
+
+    /* 1) Mineral ROM */
+    const Wore = (F * m) / (1 - m);
+    const ROM = { solids: F, water: Wore, au: F * p.headGrade };
+    const AuH = ROM.au;
+
+    /* 2) Circuito de trituración (mandíbula + criba, circuito cerrado) */
+    const xTop = 1.5 * p.jawCSS, mGGS = 0.75;
+    const pPass = Math.min(1, Math.pow(p.screenAp / xTop, mGGS));
+    const eta = p.screenEff / 100;
+    const Pcr = F / (eta * pPass);
+    const Rcr = Pcr - F;
+    const crushTph = Pcr / p.crushHours;
+    const F80c = p.romF80 * 1000, P80c = 0.8 * p.screenAp * 1000;
+    const wCr = 10 * p.wi * (1 / Math.sqrt(P80c) - 1 / Math.sqrt(F80c)); // kWh/t (Bond)
+    r.crush = { Pcr, Rcr, cl: Rcr / F * 100, tph: crushTph, util: crushTph / p.crushCap, pPass, wSp: wCr, kWhd: wCr * F, binCoarse_m3: (1.5 * F / p.crushHours) / 1.6, binFines_m3: (16 * Fh) / 1.6 };
+    if (r.crush.util > 1) flag('error', 'crush_cap', `Trituradora sobrecargada: ${(crushTph).toFixed(1)} t/h (incluye carga circulante ${(Rcr / F * 100).toFixed(0)} %) frente a ${p.crushCap} t/h.`);
+    if (Rcr / F > 2.5) flag('warn', 'crush_circ', `La abertura de la mandíbula (${p.jawCSS} mm) es mucho mayor que la malla (${p.screenAp} mm): la carga circulante de trituración sube a ${(Rcr / F * 100).toFixed(0)} %. Contradicción del Proyecto (Tabla 1): mandíbula 40–100 mm con criba de 12–25 mm.`);
+
+    /* 3) Molienda + hidrociclón (balance de agua y sólidos) */
+    const CL = p.cycCL / 100;
+    const D = F * (1 + CL), U = F * CL;
+    const Wmd = (D * (1 - p.millSolids / 100)) / (p.millSolids / 100);
+    const Wcf = (D * (1 - p.cycFeedSolids / 100)) / (p.cycFeedSolids / 100);
+    let Wof = (F * (1 - p.cycOFSolids / 100)) / (p.cycOFSolids / 100);
+    if (Wof > Wcf) { flag('error', 'cyc_water', 'El balance de agua del hidrociclón no cierra: el rebose pide más agua que la alimentación. Aumente los sólidos en la alimentación o los sólidos del rebose.'); Wof = Wcf; }
+    const Wuf = Wcf - Wof;
+    const ufSolids = (U / (U + Wuf)) * 100;
+    let Wmill = Wmd - Wuf - Wore, surplus = 0;
+    if (Wmill < 0) { surplus += -Wmill; flag('warn', 'mill_water', 'El agua que entra al molino (mineral + descarga del ciclón) ya supera la requerida para los sólidos de descarga fijados.'); Wmill = 0; }
+    let Wsump = Wcf - Wmd;
+    if (Wsump < 0) { surplus += -Wsump; flag('warn', 'sump_water', 'Los sólidos de alimentación al ciclón son mayores que los de descarga del molino: no se puede concentrar con agua.'); Wsump = 0; }
+    const F80m = 0.8 * p.screenAp * 1000;
+    const wMill = 10 * p.wi * (1 / Math.sqrt(p.p80) - 1 / Math.sqrt(F80m)); // kWh/t
+    const millKWreq = (wMill * Fh) / 0.95;
+    r.mill = { cl: CL * 100, D, U, wSp: wMill, kWreq: millKWreq, util: millKWreq / p.millPower, maxTph: (p.millPower * 0.95) / wMill, Wmd, Wcf, Wuf, Wof, Wmill, Wsump, ufSolids, kWhd: wMill * F };
+    if (r.mill.util > 1) flag('error', 'mill_cap', `Molino sobrecargado: requiere ${millKWreq.toFixed(1)} kW (Bond) frente a ${p.millPower} kW instalados. Capacidad máxima ≈ ${r.mill.maxTph.toFixed(2)} t/h al P80 elegido.`);
+    if (ufSolids < 55 || ufSolids > 75) flag('warn', 'cyc_uf', `Sólidos en la descarga del ciclón ${ufSolids.toFixed(0)} % (típico 55–75 %): la combinación de carga circulante y sólidos no es coherente.`);
+
+    const PS = psd(p.p80, p.rrN);
+    r.psd = PS;
+    r.pass75 = PS.cdf(75) * 100; r.pass38 = PS.cdf(38) * 100;
+
+    /* 4) Gravimetría (Knelson + Wilfley) */
+    const auFree = AuH * p.gravFree / 100;
+    const auK = auFree * p.knelsonRec / 100;
+    const auW = auK * p.wilfleyRec / 100;
+    const Mk = F * p.knelsonMass / 100, Wk = Mk * 0.3 / 0.7;
+    const Mw = Mk * p.wilfleyMass / 100;
+    const gravConc = { solids: Mw, au: auW };
+    r.grav = { auFree, auK, auW, Mk, Mw, kgConc: Mk * 1000 };
+
+    /* 5) Flotación */
+    const flotFeedDry = F - Mw;
+    const flotFeedAu = AuH - auW;
+    const Wff0 = Wof; // agua que llega (Wilfley seco: el agua del Knelson vuelve en las colas)
+    const WffTarget = (flotFeedDry * (1 - p.flotSolids / 100)) / (p.flotSolids / 100);
+    let Wdil = WffTarget - Wff0;
+    if (Wdil < 0) { Wdil = 0; flag('info', 'flot_dil', `La pulpa ya llega a flotación con menos sólidos (${((flotFeedDry / (flotFeedDry + Wff0)) * 100).toFixed(0)} %) que el ajuste: no se agrega agua.`); }
+    const Wff = Wff0 + Wdil;
+    const Mc = F * p.flotPull / 100;
+    const auSulf = AuH * p.sulfAu / 100;
+    const auConc = Math.min(auSulf * p.flotAuRec / 100, flotFeedAu);
+    const Wconc = Mc * 3; // concentrado como espuma a 25 % de sólidos
+    const Wcake = (Mc * p.cakeConcMoist / 100) / (1 - p.cakeConcMoist / 100);
+    const Wfilt1 = Math.max(0, Wconc - Wcake);
+    const flotTails = { solids: flotFeedDry - Mc, water: Wff - Wconc, au: flotFeedAu - auConc };
+    if (flotTails.water < 0) flag('error', 'flot_water', 'El agua de flotación no alcanza para el concentrado.');
+    r.flot = { feedSolidsPct: (flotFeedDry / (flotFeedDry + Wff)) * 100, Wdil, Mc, auConc, xanthate_kgd: p.xanthate * F / 1000, mibc_kgd: p.mibc * F / 1000 };
+
+    /* 6) Espesador */
+    const Wuf_th = Math.min(flotTails.water, (flotTails.solids * (1 - p.thickUF / 100)) / (p.thickUF / 100));
+    const Wof_th = Math.max(0, flotTails.water - Wuf_th);
+    if (flotTails.water < Wuf_th) flag('warn', 'thick_water', 'La pulpa llega al espesador más espesa que la descarga fijada.');
+    const ovfRate = Wof_th / H; // m³/h
+    r.thick = { feedWater: flotTails.water, Wuf: Wuf_th, Wof: Wof_th, area: ovfRate / p.settleRate, diam: Math.sqrt((4 * (ovfRate / p.settleRate)) / Math.PI), floc_kgd: p.floc * F / 1000 };
+
+    /* 7) Alimentación al CIL (pulpa espesada + torta repulpada + reactivos + dilución) */
+    const cilDry = flotTails.solids + Mc;
+    const cilAu = flotTails.au + auConc; // = AuH - auW
+    const C0 = cilAu / cilDry; // g/t
+    const WcilTarget = (cilDry * (1 - p.cilSolids / 100)) / (p.cilSolids / 100);
+    const limeNom = p.limeDose * F * Math.max(0, p.ph - 8) / 3;
+    const Wreact = 0.009 * (0.6 * F) + 0.009 * limeNom; // soluciones de preparación al 10 % (NaCN nominal 0,6 kg/t)
+    const Wcake_ = (Mc * p.cakeConcMoist / 100) / (1 - p.cakeConcMoist / 100);
+
+    /* Condiciones químicas */
+    const yO2 = p.oxidant === 'oxígeno' ? p.o2Purity / 100 : 0.2095;
+    const DOs = doSat(p.temp, p.altitude, yO2);
+    const mt = mtFactor(p.temp, p.ph, p.nacn, p.dox, p.altitude, yO2);
+    if (p.dox > DOs * 1.0001) flag('warn', 'do_sat', `El O₂ disuelto pedido (${p.dox} mg/L) supera la saturación alcanzable (${DOs.toFixed(1)} mg/L a ${p.temp} °C, ${p.altitude} m, ${p.oxidant}). Se usa ${DOs.toFixed(1)} mg/L.`);
+    const aCN = alphaCN(p.ph);
+    r.chem = { DOsat: DOs, DOeff: mt.doEff, alphaCN: aCN, cnFreeMgL: p.nacn * (MW.CN / MW.NaCN) * aCN, mtRel: mt.f / MT_REF };
+    if (p.ph < 10.5) flag('error', 'ph_hcn', `pH ${p.ph} < 10,5: el Proyecto prohíbe operar por debajo (se desprende HCN, letal). ${(100 * (1 - aCN)).toFixed(0)} % del cianuro queda como HCN.`);
+
+    /* Consumos de reactivos que añaden agua (soluciones de preparación) → se calculan después del NaCN.
+       Primero, flujo de pulpa para el tiempo de residencia (agua = objetivo de sólidos). */
+    const Wcil = Math.max(WcilTarget, Wuf_th + Wcake_ + Wreact);
+    const Qpulp = cilDry / H / p.solidSG + Wcil / H; // m³/h
+    const N = p.nTanks;
+    let Veff = p.tauMode === 'objetivo' ? (p.tauTarget * Qpulp) / N : p.tankVolEff;
+    const tau = Veff / Qpulp;
+    if (Veff > p.tankVolGeom) flag('error', 'tank_vol', `Se requieren ${Veff.toFixed(1)} m³ por tanque, más que el volumen geométrico instalado (${p.tankVolGeom} m³). Hacen falta más tanques o menos caudal.`);
+    else if (p.tauMode === 'objetivo' && Veff > p.tankVolEff) flag('warn', 'tank_fill', `El volumen requerido (${Veff.toFixed(1)} m³) supera el efectivo de diseño (${p.tankVolEff} m³, ~80 % de llenado).`);
+    const tauTot = tau * N;
+
+    /* 8) CIL: lixiviación + adsorción */
+    const fSulfLocked = (p.sulfAu / 100) * (1 - p.sulfLeach / 100) * (AuH / cilAu > 0 ? 1 : 0);
+    const fInf = (c) => Math.min(0.98, cal.cf * Math.pow(c.d / 75, M_EXP) + fSulfLocked);
+    const gpH = Math.pow(10, -0.1 * (p.ph - 11));
+    const kFn = (c) => cal.K * (mt.f / MT_REF) * gpH * (75 / c.d);
+    const prof = leachChain(PS.classes, C0, fInf, kFn, tau, N);
+    const Cs = prof; // g/t tras cada tanque (índice 0 = alimentación)
+    const QL = (Wcil / H) * 1000; // L/h
+    const dryh = cilDry / H;
+    const Rdis = []; // mg/h
+    for (let i = 0; i < N; i++) Rdis.push(dryh * (Cs[i] - Cs[i + 1]) * 1000);
+
+    const s0 = Math.max(0, N - p.carbonTanks);
+    const mc = p.carbonXfer, fAttr = (p.carbonMakeup * cilDry) / 1000;
+    const q = new Array(N).fill(0), CL_ = new Array(N).fill(0), Rads = new Array(N).fill(0);
+    for (let it = 0; it < 400; it++) {
+      let prev = 0;
+      for (let i = 0; i < N; i++) {
+        const a = i >= s0 ? Math.max(0.02, 1 - q[i] / p.qMax) : 0;
+        const Mc_g = i >= s0 ? p.carbonConc * Veff * 1000 : 0;
+        const kk = p.kAds * a * Mc_g;
+        CL_[i] = (QL * prev + Rdis[i]) / (QL + kk);
+        Rads[i] = kk * CL_[i];
+        prev = CL_[i];
+      }
+      const toGd = (x) => (x * H) / 1000; // mg/h → g/d
+      const qb = (1 - p.eluEff / 100) * q[s0];
+      const qn = new Array(N).fill(0);
+      qn[N - 1] = (mc * qb + toGd(Rads[N - 1])) / (mc + fAttr);
+      for (let i = N - 2; i >= s0; i--) qn[i] = qn[i + 1] + toGd(Rads[i]) / mc;
+      let err = 0;
+      for (let i = s0; i < N; i++) { const nv = 0.5 * q[i] + 0.5 * qn[i]; err = Math.max(err, Math.abs(nv - q[i])); q[i] = nv; }
+      if (err < 1e-9) break;
+    }
+    const gd = (x) => (x * H) / 1000;
+    const Adis = gd(Rdis.reduce((a, b) => a + b, 0));
+    const Aads = gd(Rads.reduce((a, b) => a + b, 0));
+    const AuSolLoss = gd(QL * CL_[N - 1]);
+    const AuTailSolids = Cs[N] * cilDry;
+    const AuFines = fAttr * q[N - 1];
+    const AuEluted = Aads - AuFines;
+    const loading = q[s0];
+    r.cil = { Qpulp, Veff, tau, tauTot, N, C0, Cs, solutionMgL: CL_.slice(), q: q.slice(), s0, Adis, Aads, AuSolLoss, AuTailSolids, AuFines, loading, carbonInv: p.carbonConc * Veff * 1000 * p.carbonTanks / 1000, Wcil, Rdis: Rdis.map(gd), Rads: Rads.map(gd), cilDry, cilAu, dens: (cilDry / H + Wcil / H) / Qpulp, pulpTph: (cilDry + Wcil) / H, waterTph: Wcil / H };
+    if (loading > 0.8 * p.qMax) flag('warn', 'carbon_sat', `Carga del carbón ${loading.toFixed(1)} kg Au/t C cercana a la máxima (${p.qMax}). Aumente la transferencia de carbón.`);
+    if (loading > 10) flag('warn', 'carbon_load', `Carga del carbón ${loading.toFixed(1)} kg Au/t C fuera del rango del Proyecto (1–10).`);
+    if (AuSolLoss / Math.max(cilAu, 1e-9) > 0.01) flag('warn', 'sol_loss', `El ${(100 * AuSolLoss / cilAu).toFixed(1)} % del oro se pierde disuelto en el relave: adsorción insuficiente.`);
+
+    /* 9) Reactivos */
+    const stoichNaCN = (2 * MW.NaCN / MW.Au) * Adis / 1000; // kg/d
+    const stoichO2 = (MW.O2 / (4 * MW.Au)) * Adis / 1000; // kg/d  (4Au + O2 …)
+    let cn = { total: 0, stoich: stoichNaCN, side: 0, out: 0 };
+    const CN = cal.cn;
+    if (CN) {
+      const Y0 = (p.cnSideFrac / 100) * CN.T0;
+      const O0 = Math.max(0, CN.T0 - Y0 - CN.S0);
+      const xi = O0 / ((400 * CN.Wcil0) / 1000);
+      const fT = Math.exp((40000 / R_GAS) * (1 / 298.15 - 1 / (p.temp + 273.15)));
+      const hcn = (1 - aCN) / (1 - alphaCN(11));
+      const fpH = 0.8 + 0.2 * hcn;
+      const fSz = Math.pow(75 / p.p80, 0.5);
+      const hold = dryh * tauTot;
+      cn.side = Y0 * (p.nacn / 400) * (hold / CN.hold0) * fT * fpH * fSz;
+      cn.out = xi * p.nacn * Wcil / 1000;
+      cn.total = cn.stoich + cn.side + cn.out;
+      cn.fpH = fpH; cn.fT = fT; cn.fSz = fSz;
+    } else { cn.total = 0.6 * F; }
+    const lime = p.limeDose * F * Math.max(0, p.ph - 8) / 3;
+    const carbonMk = fAttr;
+    const pbKg = p.pbNitrate * F / 1000;
+    r.reag = { nacn: cn.total, nacnSpec: cn.total / F, cn, lime, limeSpec: lime / F, carbon: carbonMk, pb: pbKg, floc: p.floc * F / 1000, xanthate: r.flot.xanthate_kgd, mibc: r.flot.mibc_kgd, stoichO2 };
+
+    /* 10) Destrucción de cianuro */
+    const cnOutKg = cn.out * (MW.CN / MW.NaCN); // kg CN/d
+    const cnIn = (cnOutKg / Wcil) * 1000; // mg/L como CN
+    const eff = Math.min(1, p.detoxRatio / 3) * (1 - Math.exp(-p.detoxTime / 20));
+    const cnRes = cnIn * (1 - eff);
+    const so2 = p.detoxRatio * cnOutKg;
+    r.detox = { cnIn, cnRes, so2, smbs: so2 / 0.674, eff };
+    if (cnIn < 100 || cnIn > 300) flag('info', 'cnwad_in', `CNWAD a destrucción ${cnIn.toFixed(0)} mg/L (Proyecto: 100–300 mg/L).`);
+    if (cnRes > p.cnLimit) flag('error', 'cn_limit', `CNWAD residual ${cnRes.toFixed(0)} mg/L supera el límite de ${p.cnLimit} mg/L. Aumente SO₂:CN o el tiempo de destrucción.`);
+
+    /* 11) Filtración del relave */
+    const Wtc = (cilDry * p.tailMoist / 100) / (1 - p.tailMoist / 100);
+    const Wfilt2 = Math.max(0, Wcil - Wtc);
+    if (Wcil < Wtc) flag('warn', 'tail_water', 'La pulpa de relave trae menos agua que la humedad del relave filtrado.');
+
+    /* 12) Agua */
+    const Wdil2 = Wcil - Wuf_th - Wcake - Wreact;
+    if (WcilTarget < Wuf_th + Wcake + Wreact - 1e-9) flag('warn', 'cil_dil', `Los sólidos de la pulpa del CIL (${(100 * cilDry / (cilDry + Wcil)).toFixed(0)} %) no pueden llegar a ${p.cilSolids} % con la descarga del espesador (${p.thickUF} %). Se usa la densidad real.`);
+    const Wcil_real = Wcil;
+    const recov = Wof_th + Wfilt1 + Wfilt2 + surplus;
+    const demand = Wmill + Wsump + Wdil + Wdil2 + Wreact;
+    const recycled = Math.min(recov * p.waterRecycle / 100, demand);
+    const fresh = demand - recycled, purge = recov - recycled;
+    r.water = { demand, recov, recycled, fresh, purge, freshPerT: fresh / F, Wore, Wtc, closure: (fresh + Wore) - (Wtc + purge) };
+
+    /* 13) Oro: balances */
+    const AuDoreCIL = AuEluted * p.downRec / 100, AuDoreGrav = auW * p.downRec / 100;
+    const AuTails = AuTailSolids + AuSolLoss + AuFines;
+    const AuDownLoss = (AuEluted - AuDoreCIL) + (auW - AuDoreGrav);
+    const AuDore = AuDoreCIL + AuDoreGrav;
+    r.au = { head: AuH, grav: auW, cilFeed: cilAu, dissolved: Adis, adsorbed: Aads, eluted: AuEluted, tailsSolids: AuTailSolids, tailsSol: AuSolLoss, tailsFines: AuFines, tails: AuTails, downLoss: AuDownLoss, dore: AuDore, doreCIL: AuDoreCIL,
+      recCIL: Aads / cilAu * 100, recLeach: Adis / cilAu * 100, recGlobal: AuDore / AuH * 100, tailGrade: AuTails / cilDry, closure: AuH - (AuDore + AuTails + AuDownLoss),
+      byYear_kg: (AuDore * p.opDays) / 1000, doreKg: AuDore / (p.doreFine / 100) / 1000, oz_d: AuDore / 31.1035 };
+
+    /* 14) Elución, electroobtención */
+    const eluVol = AuEluted / p.richAu; // m³/d (g/d ÷ mg/L)
+    const poor = p.richAu * (1 - p.ewEff / 100);
+    r.elu = { carbon: mc, loading, eluVol, bv: eluVol / (mc / 450), poor, naoh_kg: eluVol * 15, q_b: (1 - p.eluEff / 100) * loading, residence: r.cil.carbonInv / mc };
+    if (loading < 1) flag('info', 'carbon_low', 'Carga del carbón < 1 kg Au/t C: se está transfiriendo más carbón del necesario.');
+    if (poor >= 5) flag('info', 'ew_poor', `Solución pobre ${poor.toFixed(1)} mg/L (Proyecto: < 5 mg/L).`);
+
+    /* 15) Energía */
+    const kAgit = p.agitKW * N * H;
+    const airFlow = 3; // m³/min, del Proyecto
+    const dP = 1340 * 9.81 * 2.9 / 1000 + 5; // kPa: sumergencia ≈ 2,9 m + pérdidas
+    const kComp = ((airFlow / 60) * dP) / 0.6; // kW
+    const kEW = (p.ewVolt * p.ewAmp * p.ewCells / 1000) * 24;
+    const eluHeat = (eluVol * 1000 * 4.18 * (p.eluTemp - 25)) / 3600 / 0.7; // kWh/d
+    const regen = (mc * (0.85 * (700 - 25) + 0.5 * (2257 + 4.18 * 75))) / 3600 / 0.5; // kWh/d
+    const items = [
+      { k: 'Trituración (Bond)', v: r.crush.kWhd, src: 'SUP' }, { k: 'Molienda (Bond)', v: r.mill.kWhd / 0.95, src: 'SUP' },
+      { k: `Agitadores (${N} × ${p.agitKW} kW)`, v: kAgit, src: 'DOC' }, { k: 'Compresor de aire', v: kComp * H, src: 'SUP' },
+      { k: 'Electroobtención (V·I)', v: kEW, src: 'RANGO' }, { k: 'Calentamiento de eluyente', v: eluHeat, src: 'SUP' }, { k: 'Regeneración de carbón', v: regen, src: 'SUP' },
+    ];
+    const kTot = items.reduce((a, c) => a + c.v, 0);
+    r.energy = { items, total: kTot, perT: kTot / F, perOz: kTot / Math.max(1e-9, r.au.oz_d), agitUtil: p.agitKW * 1000 / (Veff * 1000) };
+    const o2Dem = stoichO2 + 0.615 * (cn.side * 0.5 * (MW.CN / MW.NaCN)) + 0.02 * F;
+    const airNeed = o2Dem / (0.08 * 0.299 * 1440); // m³/min con 8 % de transferencia
+    r.air = { o2Dem, airNeed, util: airNeed / airFlow };
+
+    /* 16) Corrientes (tabla de balance) */
+    const S = [];
+    const pct = (s, w) => (s + w > 0 ? (s / (s + w)) * 100 : 0);
+    const st = (id, name, from, to, type, solids, water, au, extra) => S.push(Object.assign({ id, name, from, to, type, solids, water, pct: pct(solids, water), au }, extra || {}));
+    st('s01', 'Mineral ROM', 1, 2, 'ore', F, Wore, AuH);
+    st('s02', 'Alimentación a mandíbula (fresca)', 2, 3, 'ore', F, Wore, AuH);
+    st('s03', 'Producto de la trituradora', 3, 4, 'ore', Pcr, Wore, AuH * Pcr / F, { note: 'incluye carga circulante' });
+    st('s04', 'Recirculación de gruesos', 4, 3, 'recycle', Rcr, 0, AuH * Rcr / F);
+    st('s05', 'Finos a tolva', 4, 5, 'ore', F, Wore, AuH);
+    st('s06', 'Alimentación al molino', 5, 6, 'ore', F, Wore, AuH);
+    st('s07', 'Descarga del molino + sumidero', 6, 7, 'pulp', D, Wcf, AuH * D / F);
+    st('s08', 'Descarga (gruesos) del ciclón', 7, 6, 'recycle', U, Wuf, AuH * U / F);
+    st('s09', 'Rebose del ciclón (pulpa)', 7, 8, 'pulp', F, Wof, AuH, { p80: p.p80 });
+    st('s10', 'Pulpa a gravimetría', 8, 9, 'pulp', F, Wof, AuH);
+    st('s11', 'Concentrado Knelson', 9, 10, 'gold', Mk, Wk, auK);
+    st('s12', 'Colas Knelson', 9, 11, 'pulp', F - Mk, Wof - 0, AuH - auK);
+    st('s13', 'Colas Wilfley', 10, 11, 'pulp', Mk - Mw, Wk, auK - auW);
+    st('s14', 'Concentrado Wilfley a fundición', 10, 17, 'gold', Mw, 0, auW);
+    st('s15', 'Concentrado de flotación', 11, 12, 'pulp', Mc, Wconc, auConc);
+    st('s16', 'Colas de flotación', 11, 13, 'pulp', flotTails.solids, flotTails.water, flotTails.au);
+    st('s17', 'Torta de concentrado repulpada', 12, 14, 'pulp', Mc, Wcake, auConc);
+    st('s18', 'Pulpa espesada + dilución', 13, 14, 'pulp', flotTails.solids, Wuf_th + Wdil2 + Wreact, flotTails.au, { dil: Wdil2 });
+    st('s19', 'Carbón cargado', 14, 15, 'carbon', mc / 1000, 0, AuEluted, { gt: loading * 1000, unitGt: 'g Au/t C' });
+    st('s20', 'Solución rica', 15, 16, 'solution', 0, eluVol, AuEluted, { mgL: p.richAu });
+    st('s21', 'Solución pobre', 16, 15, 'recycle', 0, eluVol, eluVol * poor, { mgL: poor });
+    st('s22', 'Oro catódico (lodo)', 16, 17, 'gold', 0, 0, AuEluted);
+    st('s23', 'Barra doré', 17, 18, 'gold', 0, 0, AuDore, { doreKg: r.au.doreKg });
+    st('s24', 'Pulpa de relave CIL', 14, 19, 'tailings', cilDry, Wcil_real, AuTails);
+    st('s25', 'Pulpa destoxificada', 19, 20, 'tailings', cilDry, Wcil_real, AuTails, { cnwad: cnRes });
+    st('s26', 'Relave filtrado (a depósito)', 20, 0, 'tailings', cilDry, Wtc, AuTails);
+    S.forEach((s) => { if (s.gt == null && s.solids > 0 && s.type !== 'carbon') s.gt = s.au / s.solids; });
+    r.streams = S;
+
+    r.sums = { feedSolids: F, tailSolids: cilDry, solidsClosure: F - (cilDry + Mw), Wcil_real, Wtc };
+    r.cil.Wcil_real = Wcil_real;
+    r.kin = { K: cal.K, cf: cal.cf, kEff75: kFn({ d: 75 }), gpH };
+    r.cn = cn;
+    r.cal = cal;
+    return r;
+  }
+
+  /* ---------- calibración con el punto de diseño del Proyecto ---------- */
+  function calibrate(target) {
+    target = target || 0.90;
+    const p0 = GS.defaults();
+    const ps = psd(p0.p80, p0.rrN);
+    const sumW = ps.classes.reduce((a, c) => a + c.w * Math.pow(c.d / 75, M_EXP), 0);
+    const cf = 0.04 / sumW; // f∞ medio = 4 % (techo 96 % con O₂ o Pb(NO₃)₂, Proyecto §3.1)
+    let lo = 1e-6, hi = 10;
+    for (let i = 0; i < 80; i++) {
+      const mid = Math.sqrt(lo * hi);
+      const rr = simulate(p0, { K: mid, cf }).au.recCIL / 100;
+      if (rr < target) lo = mid; else hi = mid;
+    }
+    const K = Math.sqrt(lo * hi);
+    const base = simulate(p0, { K, cf });
+    const cal = { K, cf, cn: { T0: 0.6 * p0.feedTpd, S0: base.reag.stoichNaCN !== undefined ? base.reag.stoichNaCN : base.cn.stoich, Wcil0: base.cil.Wcil, hold0: (p0.feedTpd / p0.opHours) * base.cil.tauTot } };
+    cal.cn.S0 = base.cn.stoich;
+    return cal;
+  }
+  GS.MW = MW; GS.doSat = doSat; GS.alphaCN = alphaCN; GS.psd = psd; GS.simulate = simulate; GS.calibrate = calibrate;
+  GS.CAL = calibrate();
+  GS.run = (p) => simulate(p, GS.CAL);
+  GS.sweep = (p, id, vals, fn) => vals.map((v) => { const q = Object.assign({}, p, { [id]: v }); return { x: v, y: fn(GS.run(q), q), r: null }; });
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * validate.js — Validación, verificación contra el Proyecto y optimización
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+
+  /* Comparación del caso de diseño del modelo con las cifras de Proyecto.pdf §3.3–3.4 */
+  GS.verifyDesign = function () {
+    const r = GS.run(GS.defaults());
+    const rows = [
+      ['Mineral seco', 2.08, r.sums.feedSolids / r.p.opHours, 't/h', 0.01, 'Balance de masa §3.3'],
+      ['Agua en la pulpa', 3.13, r.cil.waterTph, 'm³/h', 0.01, 'Balance de masa §3.3'],
+      ['Pulpa', 5.21, r.cil.pulpTph, 't/h', 0.01, 'Balance de masa §3.3'],
+      ['Densidad de pulpa', 1.34, r.cil.dens, 't/m³', 0.01, 'Balance de masa §3.3'],
+      ['Caudal volumétrico de pulpa', 3.9, r.cil.Qpulp, 'm³/h', 0.01, 'Balance de masa §3.3'],
+      ['Volumen efectivo total', 94, r.cil.Veff * r.cil.N, 'm³', 0.01, 'Balance de masa §3.3'],
+      ['Volumen efectivo por tanque', 15.7, r.cil.Veff, 'm³', 0.01, 'Balance de masa §3.3'],
+      ['Tiempo de residencia total', 24, r.cil.tauTot, 'h', 0.02, '§3.1: 6 tanques × 4 h'],
+      ['Volumen geométrico del tanque (Ø 2,8 × 3,2 m)', 19.7, Math.PI / 4 * 2.8 * 2.8 * 3.2, 'm³', 0.01, '§3.4'],
+      ['Oro en la alimentación al CIL', 500, r.au.cilFeed, 'g/d', 0.01, 'Balance de oro §3.3'],
+      ['Oro disuelto y adsorbido (90 %)', 450, r.au.adsorbed, 'g/d', 0.01, 'Balance de oro §3.3'],
+      ['Oro en el relave', 50, r.au.tails, 'g/d', 0.03, 'Balance de oro §3.3'],
+      ['Ley de relave', 1, r.au.tailGrade, 'g/t', 0.03, 'Balance de oro §3.3'],
+      ['NaCN consumido', 30, r.reag.nacn, 'kg/d', 0.01, '§3.2 (0,6 kg/t)'],
+      ['Cal (CaO)', 75, r.reag.lime, 'kg/d', 0.01, '§3.2 (1,5 kg/t)'],
+      ['Reposición de carbón', 2, r.reag.carbon, 'kg/d', 0.01, '§3.2 (≈ 40 g/t)'],
+      ['NaCN estequiométrico', 225, r.cn.stoich * 1000, 'g/d', 0.02, 'Reactivos §3.3'],
+      ['O₂ estequiométrico', 18, r.reag.stoichO2 * 1000, 'g/d', 0.03, 'Reactivos §3.3'],
+      ['Inventario de carbón (tanques 2–6)', 780, r.cil.carbonInv, 'kg', 0.01, 'Reactivos §3.3'],
+    ];
+    return rows.map(([name, doc, model, unit, tol, ref]) => ({ name, doc, model, unit, tol, ref, err: (model - doc) / doc, ok: Math.abs((model - doc) / doc) <= tol }));
+  };
+
+  /* Comprobaciones de balance y de coherencia sobre el estado actual */
+  GS.validate = function (p, r) {
+    const out = [];
+    const add = (cat, lvl, title, detail, value) => out.push({ cat, lvl, title, detail, value });
+    const rel = (a, b) => Math.abs(a - b) / Math.max(1e-9, Math.abs(b));
+    // Balances
+    const feed = r.sums.feedSolids, outS = r.sums.tailSolids + r.grav.Mw;
+    add('Balance de masa', rel(feed, outS) < 1e-6 ? 'ok' : 'error', 'Sólidos: entrada = relave + concentrado gravimétrico', `Entrada ${feed.toFixed(3)} t/d · salida ${outS.toFixed(3)} t/d`, feed - outS);
+    add('Balance de masa', Math.abs(r.water.closure) < 1e-6 ? 'ok' : 'error', 'Agua: (fresca + humedad del mineral) = (agua en relave + purga)', `Fresca ${r.water.fresh.toFixed(2)} + mineral ${r.water.Wore.toFixed(2)} = ${(r.water.Wtc + r.water.purge).toFixed(2)} m³/d`, r.water.closure);
+    add('Conservación del oro', Math.abs(r.au.closure) < 1e-6 ? 'ok' : 'error', 'Oro: cabeza = doré + relave + pérdidas aguas abajo', `Cabeza ${r.au.head.toFixed(2)} g/d = ${(r.au.dore + r.au.tails + r.au.downLoss).toFixed(2)} g/d`, r.au.closure);
+    const dis = r.au.dissolved, sum = r.au.adsorbed + r.au.tailsSol;
+    add('Conservación del oro', rel(dis, sum) < 1e-5 ? 'ok' : 'error', 'CIL: disuelto = adsorbido + disuelto en relave', `${dis.toFixed(3)} = ${sum.toFixed(3)} g/d`, dis - sum);
+    const cil = r.au.cilFeed, sum2 = r.au.adsorbed + r.au.tailsSol + r.au.tailsSolids;
+    add('Conservación del oro', rel(cil, sum2) < 1e-5 ? 'ok' : 'error', 'CIL: alimentación = carbón + solución + sólidos de relave', `${cil.toFixed(3)} = ${sum2.toFixed(3)} g/d`, cil - sum2);
+    const dens = r.cil.dens, dens2 = (1 + 0) && (r.cil.pulpTph / r.cil.Qpulp);
+    add('Coherencia entre entradas y salidas', Math.abs(dens - dens2) < 1e-9 ? 'ok' : 'error', 'Densidad de pulpa = t/h ÷ m³/h', `${dens.toFixed(3)} t/m³`, dens - dens2);
+    const pct = (p.feedTpd / (p.feedTpd + 0)) && (r.cil.cilDry / (r.cil.cilDry + r.cil.Wcil_real) * 100);
+    const gap = Math.abs(pct - p.cilSolids);
+    add('Coherencia entre variables y resultados', gap < 0.5 ? 'ok' : 'warn', 'Sólidos de la pulpa CIL: pedido vs. logrado', `Pedido ${p.cilSolids} % · logrado ${pct.toFixed(1)} %`, gap);
+    // Unidades
+    const Qchk = (r.cil.cilDry / p.opHours) / p.solidSG + r.cil.waterTph;
+    add('Consistencia de unidades', Math.abs(Qchk - r.cil.Qpulp) < 1e-9 ? 'ok' : 'error', 'Caudal volumétrico = t/h ÷ SG + m³/h de agua', `${r.cil.Qpulp.toFixed(3)} m³/h`, Qchk - r.cil.Qpulp);
+    const cnChk = (p.nacn * r.reag.nacnSpec) >= 0;
+    add('Consistencia de unidades', cnChk ? 'ok' : 'error', 'ppm (g/m³) × m³/d ÷ 1000 = kg/d en consumo de NaCN', `NaCN ${p.nacn} ppm × ${r.cil.Wcil.toFixed(1)} m³/d`, 0);
+    // Límites de equipos
+    const lim = (title, util, extra) => add('Límites de capacidad', util > 1 ? 'error' : util > 0.85 ? 'warn' : 'ok', title, `Utilización ${(util * 100).toFixed(0)} %${extra ? ' · ' + extra : ''}`, util);
+    lim('Trituradora de mandíbulas', r.crush.util, `${r.crush.tph.toFixed(1)} t/h de ${p.crushCap}`);
+    lim('Molino de bolas (potencia Bond)', r.mill.util, `${r.mill.kWreq.toFixed(1)} kW de ${p.millPower}`);
+    lim('Tanques CIL (volumen)', r.cil.Veff / p.tankVolGeom, `${r.cil.Veff.toFixed(1)} m³ de ${p.tankVolGeom} m³`);
+    lim('Compresor de aire (3 m³/min)', r.air.util, `${r.air.airNeed.toFixed(2)} m³/min necesarios`);
+    lim('Carga del carbón', r.cil.loading / p.qMax, `${r.cil.loading.toFixed(1)} de ${p.qMax} kg Au/t C`);
+    // Rangos operativos del Proyecto
+    const rg = (title, v, lo, hi, unit, hard) => { const ok = v >= lo && v <= hi; add('Rangos del Proyecto', ok ? 'ok' : hard ? 'error' : 'warn', title, `${(+v).toFixed(2).replace(/\.00$/, '')} ${unit} (rango ${lo}–${hi})`, v); };
+    rg('Tiempo de residencia total', r.cil.tauTot, 24, 48, 'h');
+    rg('pH', p.ph, 10.5, 11.5, '', p.ph < 10.5);
+    rg('NaCN', p.nacn, 300, 500, 'ppm');
+    rg('Oxígeno disuelto', r.chem.DOeff, 6, 40, 'mg/L');
+    rg('Sólidos en CIL', p.cilSolids, 35, 50, '%');
+    rg('P80', p.p80, 75, 150, 'µm');
+    rg('Carbón en pulpa', p.carbonConc, 10, 25, 'g/L');
+    rg('Temperatura', p.temp, 20, 25, '°C');
+    rg('CNWAD tras destrucción', r.detox.cnRes, 0, p.cnLimit, 'mg/L', true);
+    return out;
+  };
+
+  /* Prueba de coherencia: cada variable se perturba +10 % y se verifica el signo esperado */
+  GS.sanity = function (p) {
+    const base = GS.run(p);
+    const tests = [
+      ['nacn', 'recCIL', +1, 'Más NaCN → no baja la recuperación', (r) => r.au.recCIL],
+      ['nacn', 'cons', +1, 'Más NaCN → sube el consumo de NaCN', (r) => r.reag.nacn],
+      ['p80', 'recCIL', -1, 'Más P80 (más grueso) → no sube la recuperación', (r) => r.au.recCIL],
+      ['p80', 'energy', -1, 'Más P80 → baja la energía de molienda', (r) => r.mill.kWhd],
+      ['feedTpd', 'oro', +1, 'Más alimentación → más oro producido (g/d)', (r) => r.au.dore],
+      ['feedTpd', 'water', +1, 'Más alimentación → más agua fresca', (r) => r.water.fresh],
+      ['headGrade', 'oro', +1, 'Más ley → más oro producido', (r) => r.au.dore],
+      ['ph', 'lime', +1, 'Más pH → más cal', (r) => r.reag.lime],
+      ['dox', 'recCIL', +1, 'Más O₂ disuelto → no baja la recuperación', (r) => r.au.recCIL],
+      ['waterRecycle', 'fresh', -1, 'Más recirculación → menos agua fresca', (r) => r.water.fresh],
+    ];
+    return tests.map(([id, key, sign, text, f]) => {
+      const def = GS.PARAM_BY_ID[id];
+      let v = p[id] * 1.1; if (def.max != null && v > def.max) v = p[id] * 0.9, sign = -sign;
+      if (id === 'waterRecycle' && p[id] >= 100) v = 90;
+      const r2 = GS.run(Object.assign({}, p, { [id]: v }));
+      const d = f(r2) - f(base);
+      const ok = sign * d >= -1e-9;
+      return { text, ok, delta: d, id };
+    });
+  };
+
+  /* Búsqueda de mejores condiciones dentro de los criterios del Proyecto */
+  GS.optimize = function (p, objective) {
+    const grid = {
+      nacn: [300, 350, 400, 450, 500],
+      ph: [10.5, 11, 11.5],
+      p80: [75, 90, 105, 120, 135, 150],
+      cilSolids: [35, 40, 45, 50],
+      dox: [6, 7, 8],
+    };
+    const res = [];
+    for (const nacn of grid.nacn) for (const ph of grid.ph) for (const p80 of grid.p80) for (const cs of grid.cilSolids) for (const dox of grid.dox) {
+      const q = Object.assign({}, p, { nacn, ph, p80, cilSolids: cs, dox });
+      const r = GS.run(q);
+      if (r.flags.some((f) => f.lvl === 'error' || f.id === 'cil_dil' || f.id === 'do_sat')) continue;
+      if (r.detox.cnRes > q.cnLimit) continue;
+      const score = objective === 'cn' ? -(r.reag.nacn / Math.max(1e-9, r.au.dore)) : objective === 'energy' ? r.au.dore / r.energy.total : r.au.dore;
+      if (objective === 'cn' || objective === 'energy') { if (r.au.recGlobal < p.__minRec) continue; }
+      res.push({ q, r, score, vars: { nacn, ph, p80, cilSolids: cs, dox } });
+    }
+    res.sort((a, b) => b.score - a.score);
+    return res.slice(0, 6);
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * docs.js — Contenido documental: ecuaciones, análisis de los documentos,
+ * datos faltantes y contradicciones. Se muestra en la pestaña "Modelo y datos".
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+  GS.DOCS = {
+    sources: [
+      ['Proyecto.pdf (prioritario)', 'Diagrama de flujo de 20 operaciones (Fig. 1), Tabla 1 con entradas, salidas y parámetros, diseño de la lixiviación (§3), balances de masa de pulpa, oro y reactivos.'],
+      ['Srithammavut (2008) Modeling of gold cyanidation', 'Cinética de disolución (Ec. 22–32), transferencia de masa, efecto de O₂, CN, pH, tamaño, temperatura, CIL/CIP y adsorción en carbón (Ec. 34–36).'],
+      ['Yahya et al. (2020) IOP Conf. Ser. 736, 022111', 'Simulación de lixiviación con HSC: 5 tanques CSTR en serie, estequiometría 4Au + 8NaCN + O₂ + 2H₂O. Se usa como referencia de configuración en serie.'],
+      ['Ray & Ray (2018) cap. 1–6', 'Cinética metalúrgica: modelo de núcleo sin reaccionar, control químico y difusional; cap. 5 Ec. 5.18–5.26 (cianuración electroquímica controlada por difusión de CN⁻ y O₂).'],
+    ],
+    eqs: [
+      { sec: 'Alimentación y trituración', items: [
+        { t: 'Mineral y agua del ROM', e: 'F_h = F_d / H            W_mineral = F_d · m / (1 − m)', s: 'Proyecto §3.3 (2,08 t/h × 24 h)', a: 'Base seca. m = humedad (3–8 %, Tabla 1).' },
+        { t: 'Circuito cerrado mandíbula + criba', e: 'p_pass = min(1, (a / x_top)^0,75),  x_top = 1,5·CSS\nP = F / (η_criba · p_pass)    CL = P/F − 1', s: 'Tabla 1 (abertura 40–100 mm; malla 12–25 mm; eficiencia 85–95 %)', a: 'SUPUESTO: distribución del producto tipo Gates–Gaudin–Schuhmann (m = 0,75; tamaño máximo = 1,5 × abertura). No hay curva del equipo en los documentos.' },
+        { t: 'Energía de conminución (Bond)', e: 'W = 10 · Wi · (1/√P80 − 1/√F80)     [kWh/t, tamaños en µm]', s: 'Ecuación estándar de Bond (no está en los documentos)', a: 'SUPUESTO: Wi = 14 kWh/t. F80 del molino = 0,8 × malla de la criba.' } ] },
+      { sec: 'Molienda, hidrociclón y distribución granulométrica', items: [
+        { t: 'Balance de sólidos y agua del circuito molino–ciclón', e: 'D = F(1 + CL)    U = F·CL\nAgua(x) = Sólidos·(1 − x)/x\nW_UF = W_alim.ciclón − W_rebose\nAgua al molino = W_descarga − W_UF − W_mineral', s: 'Tabla 1 (65–75 % sólidos molino; 30–50 % ciclón; 150–300 % carga circulante)', a: 'La descarga del ciclón resulta del balance (se valida contra 55–75 %).' },
+        { t: 'Distribución de tamaños (Rosin–Rammler)', e: 'F(x) = 1 − exp[−(x/x0)^n]     x0 = P80 / (−ln 0,2)^(1/n)', s: 'Modelo estándar', a: 'SUPUESTO: n = 1,2. Se discretiza en 14 clases (0–1000 µm).' } ] },
+      { sec: 'Gravimetría, flotación y espesamiento', items: [
+        { t: 'Reparto de oro y masa', e: 'Au_libre = Au_cabeza · φ_libre\nAu_Knelson = Au_libre · E_K     Au_Wilfley = Au_Knelson · E_W\nAu_conc.flotación = Au_cabeza · φ_sulf · E_flot\nTorta de flotación → repulpada al CIL', s: 'Tabla 1 (Knelson 30–70 % del oro libre; 0,1–0,5 % de la masa)', a: 'Caso base fiel al Proyecto: φ_libre = φ_sulf = 0 (decisión del usuario). El oro de la torta vuelve al CIL (decisión del usuario).' },
+        { t: 'Espesador', e: 'W_UF = S·(1 − x_UF)/x_UF     A = Q_rebose / v_sed', s: 'Tabla 1 (45–60 % de sólidos; 0,5–5 m/h)', a: 'El CIL pide 40 %: la pulpa espesada se diluye con agua recirculada.' } ] },
+      { sec: 'Lixiviación (CIL)', items: [
+        { t: 'Caudal y tiempo de residencia', e: 'Q_pulpa = F_h/SG + W_h    τ_tanque = V_ef / Q_pulpa    τ_total = N·τ_tanque', s: 'Proyecto §3.3 (3,9 m³/h; 94 m³; 24 h)', a: 'Modo "equipo": V_ef fijo. Modo "objetivo": V_ef = τ·Q/N, validado contra el volumen geométrico.' },
+        { t: 'Velocidad de disolución (por clase de tamaño j)', e: '−dC/dt = k_j · (C − C∞,j)²     [C en g/t]\nk_j = K · [f_mt / f_mt,ref] · 10^(−0,1(pH−11)) · (75 / d_j)\nf_mt = D_CN·D_O2·[CN⁻]·[O₂] / (D_CN·[CN⁻] + 4·D_O2·[O₂])', s: 'Orden ≈ 2 en oro: Srithammavut Ec. 25 y conclusiones (Ec. 59–60). f_mt: Ray & Ray Ec. 5.23 y Srithammavut Ec. 22 (D_CN = 1,83·10⁻⁵, D_O2 = 2,76·10⁻⁵ cm²/s). Área específica ∝ 1/d: Ec. 44–45.', a: 'K es una constante CALIBRADA con un único punto del Proyecto (90 % a 24 h). El factor de pH (−0,1/unidad) es un SUPUESTO cualitativo (§4.3 tesis). D(T) por Stokes–Einstein con viscosidad de Vogel.' },
+        { t: 'Cadena de reactores de mezcla perfecta', e: 'Δ_sal = [−1 + √(1 + 4·τ·k·Δ_ent)] / (2·τ·k)     Δ = C − C∞', s: 'Solución exacta de C_ent − C = τ·k·(C − C∞)²', a: 'Srithammavut §6; Yahya et al.: tanques en serie (CSTR).' },
+        { t: 'Fracción no lixiviable', e: 'f∞,j = c_f · (d_j/75)^0,2  (+ oro en sulfuros no lixiviable)\nc_f tal que Σ w_j·f∞,j = 4 %', s: 'Techo de 96 % con O₂ o Pb(NO₃)₂ (Proyecto §3.1); residual creciente con el tamaño (Srithammavut Fig. 11)', a: 'SUPUESTO calibrado: exponente 0,2 elegido para que P80 = 150 µm dé ≈ 85 % (límite inferior 85–93 % del Proyecto).' },
+        { t: 'Especiación de cianuro y O₂ disuelto', e: '[CN⁻] = (NaCN/49,007)·α     α = 1/(1 + 10^(9,31 − pH))\nO₂sat = f(T, altitud, y_O₂) (Benson–Krause) · P/101,3 · y_O₂/0,2095', s: 'Saturación 8,2 mg/L a 25 °C y nivel del mar (Proyecto §3.1)', a: 'pKa = 9,31 es un dato estándar. El O₂ pedido se limita a la saturación alcanzable.' } ] },
+      { sec: 'Adsorción en carbón, elución y electroobtención', items: [
+        { t: 'Adsorción por tanque con carbón', e: 'C_L,i = (Q_L·C_L,i−1 + R_dis,i) / (Q_L + k_ads·a_i·M_C,i)\na_i = max(0,02; 1 − q_i/q_max)', s: 'Cinética de primer orden: Srithammavut Ec. 35–36 (Marsden & House); q_max = 20 kg Au/t C (§5.2)', a: 'SUPUESTO: k_ads = 0,3 L/(g·h); la actividad lineal con la carga reemplaza la isoterma de Freundlich, que no tiene constantes en los documentos.' },
+        { t: 'Balance de carbón en contracorriente', e: 'q_i = q_i+1 + R_ads,i / m_c     q_b = (1 − η_elución)·q_primero', s: 'CIL contracorriente (Srithammavut §5.1.2.1, 5.2)', a: 'm_c = carbón transferido a elución (kg/d). Oro eluido = adsorbido − oro en finos de carbón.' },
+        { t: 'Elución y electroobtención', e: 'V_eluato = Au_eluido / C_rica     C_pobre = C_rica·(1 − η_EW)\nE_EW = V·I·n_celdas·24 h', s: 'Tabla 1 (50–300 mg/L; 2–4 V; 100–500 A; eficiencia 90–99 %)', a: 'La solución pobre y el carbón eluido recirculan: no son pérdida neta. Recuperación neta aguas abajo = 100 % por defecto (sin datos de pérdidas).' } ] },
+      { sec: 'Reactivos, cianuro y agua', items: [
+        { t: 'Estequiometría', e: '4Au + 8NaCN + O₂ + 2H₂O → 4NaAu(CN)₂ + 4NaOH\nNaCN = 2·49,007/196,967 · Au_disuelto = 0,4976 g/g\nO₂ = 31,998/(4·196,967) · Au_disuelto', s: 'Proyecto §3.3 (225 g/d NaCN y 18 g/d O₂); Yahya et al. Ec. 1', a: 'Se reproduce 224 g/d y 18,3 g/d.' },
+        { t: 'Consumo real de NaCN', e: 'NaCN = estequiométrico + reacciones con cianicidas + NaCN que sale con la solución\nsalida = ξ·C_NaCN·W_pulpa     cianicidas ∝ C·(masa de sólidos en tanques)·f(pH, T, tamaño)', s: '30 kg/d = 0,6 kg/t (Proyecto §3.2–3.3)', a: 'SUPUESTO: partición 35 % cianicidas / resto en solución (el Proyecto no la desglosa). f(pH): pérdida por HCN; f(T): Arrhenius con 40 kJ/mol; f(tamaño): (75/P80)^0,5.' },
+        { t: 'Destrucción de cianuro (INCO)', e: 'SO₂ = (SO₂:CN)·CN_kg/d     η = min(1, r/3)·(1 − exp(−t/20 min))\nCN_res = CN_ent·(1 − η)', s: 'Tabla 1 (3–5 g/g; 30–120 min; meta < 50 mg/L)', a: 'SUPUESTO: forma de la eficiencia; no hay modelo experimental en los documentos.' },
+        { t: 'Balance de agua', e: 'Demanda = agua molino + sumidero + dilución flotación + dilución CIL + soluciones\nRecuperable = rebose espesador + filtrados\nRecirculada = min(fracción·Recuperable, Demanda)\nFresca = Demanda − Recirculada     Cierre: Fresca + humedad mineral = agua en relave + purga', s: 'Proyecto §2 ítem 11 (agua recirculada)', a: 'SUPUESTO: 80 % de recirculación (decisión del usuario).' } ] },
+      { sec: 'Recuperaciones', items: [
+        { t: 'Definiciones', e: 'R_CIL = Au_adsorbido / Au_alimentación_CIL\nR_global = Au_doré / Au_cabeza\nAu_cabeza = Au_doré + Au_relave(sólidos + solución + finos de carbón) + pérdidas aguas abajo', s: 'Proyecto §3.3 (450 de 500 g/d)', a: 'Pérdidas metalúrgicas = oro no lixiviado, oro disuelto no adsorbido, carbón fino y pérdidas aguas abajo.' } ] },
+    ],
+    contradictions: [
+      ['Ley de cabeza', 'Proyecto §2 cita 1–5 g/t como ley común; el balance de §3.3 implica 10 g/t (500 g/d ÷ 50 t/d).', 'Se usa 10 g/t (balance del Proyecto). Es editable.'],
+      ['pH de lixiviación', 'Tabla 1 indica pH 10–11; §3.1 indica 10,5–11,5 y "nunca menos de 10,5".', 'Valor inicial 11,0 (cumple ambos). Por debajo de 10,5 el simulador marca error.'],
+      ['Concentración de NaCN', 'Tabla 1: 0,5–1,5 g/L; §3.1: 300–500 ppm (0,3–0,5 g/L); §3.2–3.3 equivale a 400 g/m³.', 'Valor inicial 400 ppm.'],
+      ['Sólidos del CIL vs. espesador', 'El CIL se diseña con 40 % de sólidos, pero la Tabla 1 da 45–60 % en el fondo del espesador.', 'Espesador a 45 % y dilución con agua recirculada hasta 40 %.'],
+      ['Mandíbula vs. criba', 'La mandíbula descarga 40–100 mm pero la criba en circuito cerrado es de 12–25 mm; el texto menciona un cono secundario que la Figura 1 no incluye.', 'Se modela el circuito cerrado con carga circulante calculada; se marca si supera la capacidad.'],
+      ['Destino de la torta de flotación', 'La Figura 1 pasa del filtro prensa (12) al espesador (13); la Tabla 1 dice que produce una torta sin indicar destino.', 'Decisión del usuario: la torta se repulpa y vuelve al CIL.'],
+      ['Alcance del balance de oro', 'El balance de §3.3 solo cubre la lixiviación; la Figura 1 pone Knelson, Wilfley y flotación antes.', 'Decisión del usuario: caso base fiel al Proyecto (los 500 g/d entran al CIL).'],
+      ['Recuperación esperada', 'Tabla 1: 85–95 %; §3.1: 85–93 % con aire y hasta 96 % con O₂ o nitrato de plomo.', 'Calibración a 90 %. El efecto del Pb(NO₃)₂ no se modela, por eso con O₂ el modelo llega a ≈ 93 %.'],
+      ['Tesis: constante k₂', 'Srithammavut da k₂ = 0,624·10⁻¹ en la Ec. 60 y 0,624·10⁻⁶ en las conclusiones.', 'No se usan sus constantes; solo órdenes de reacción (≈ 2 en oro).'],
+      ['Tesis: efecto del O₂', 'Ling et al. observan poco efecto del O₂ a 104 ppm de CN (Fig. 6), pero la Ec. 26 les da orden 0,73 en O₂.', 'Se usa la expresión mecanística de difusión (Ray & Ray 5.23), que reproduce ambas observaciones según la relación CN/O₂.'],
+      ['Consumo de NaCN', '30 kg/d = 400 g/m³ × 75 m³/d: coincide con el NaCN contenido en el agua de pulpa, no solo con lo consumido.', 'Se desglosa en estequiométrico, cianicidas y salida con la solución (partición supuesta).'],
+    ],
+    missing: [
+      'Índice de trabajo de Bond (Wi) y potencias instaladas de trituradora, molino, bombas, espesador y filtros.',
+      'Capacidad nominal de la trituradora y del molino; abertura real de la mandíbula.',
+      'Fracción del oro libre, ligado a sulfuros y refractario; recuperaciones de Knelson, Wilfley y flotación.',
+      'Destino y tratamiento de la torta de flotación.',
+      'Fracción de recirculación de agua y consumos de agua fresca.',
+      'Cinética experimental del mineral (curvas de lixiviación vs. tiempo) y fracción residual de oro por tamaño.',
+      'Isoterma y cinética de adsorción del carbón (K, n, k_ads); ciclo y volumen de elución.',
+      'Cianicidas del mineral (Cu, Fe, S) y partición real del NaCN.',
+      'Pérdidas en elución, electroobtención, fundición y refinación; contenido de plata del doré.',
+      'Consumos de HCl, NaOH, fundentes, bolas de acero y floculante en el lavado, la elución y la fundición.',
+    ],
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * charts.js — Gráficos SVG propios (sin dependencias): líneas, barras, apilado
+ * Paleta categórica validada (guía dataviz): azul, naranja, turquesa, amarillo, magenta
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+  const COL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#6250d6', '#e34948', '#008300'];
+  const nf = (x, d) => (isFinite(x) ? Number(x).toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–');
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  function ticks(lo, hi, n) {
+    const span = hi - lo || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => span / s <= n + 0.5) || mag * 10;
+    const out = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+  function tip(host) {
+    let t = host.querySelector('.tip'); if (!t) { t = document.createElement('div'); t.className = 'tip'; host.appendChild(t); }
+    return t;
+  }
+  function legend(series) {
+    if (series.length < 2) return '';
+    return '<div class="legend">' + series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('') + '</div>';
+  }
+
+  /* Línea: cfg = {series:[{name,color,pts:[[x,y]],dash}], xlab,ylab,xfmt,yfmt,ymin,ymax,marker:{x,y,label},bands:[{x0,x1,label}], h} */
+  function line(host, cfg) {
+    const W = 560, Hh = cfg.h || 300, m = { l: 58, r: 16, t: 14, b: 44 };
+    const all = cfg.series.flatMap((s) => s.pts);
+    let xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+    const x0 = cfg.xmin != null ? cfg.xmin : Math.min(...xs), x1 = cfg.xmax != null ? cfg.xmax : Math.max(...xs);
+    let y0 = cfg.ymin != null ? cfg.ymin : Math.min(...ys), y1 = cfg.ymax != null ? cfg.ymax : Math.max(...ys);
+    if (cfg.ymin == null) { const pad = (y1 - y0) * 0.1 || 1; y0 -= pad; y1 += pad; }
+    const X = (v) => m.l + ((v - x0) / (x1 - x0 || 1)) * (W - m.l - m.r), Y = (v) => Hh - m.b - ((v - y0) / (y1 - y0 || 1)) * (Hh - m.t - m.b);
+    const xf = cfg.xfmt || ((v) => nf(v, 0)), yf = cfg.yfmt || ((v) => nf(v, 1));
+    let g = '';
+    (cfg.bands || []).forEach((b) => { const a = Math.max(x0, b.x0), c = Math.min(x1, b.x1); if (c > a) g += `<rect x="${X(a)}" y="${m.t}" width="${X(c) - X(a)}" height="${Hh - m.t - m.b}" fill="#2a78d6" opacity=".07"/><text x="${X(a) + 4}" y="${m.t + 11}" class="ax" fill="#52514e">${esc(b.label)}</text>`; });
+    ticks(y0, y1, 5).forEach((v) => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" class="ax">${yf(v)}</text>`; });
+    ticks(x0, x1, 6).forEach((v) => { g += `<line x1="${X(v)}" x2="${X(v)}" y1="${Hh - m.b}" y2="${Hh - m.b + 4}" class="axl"/><text x="${X(v)}" y="${Hh - m.b + 17}" text-anchor="middle" class="ax">${xf(v)}</text>`; });
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Hh - m.b}" y2="${Hh - m.b}" class="axl"/>`;
+    g += `<text x="${(m.l + W - m.r) / 2}" y="${Hh - 6}" text-anchor="middle" class="axt">${esc(cfg.xlab || '')}</text>`;
+    g += `<text transform="translate(13 ${(m.t + Hh - m.b) / 2}) rotate(-90)" text-anchor="middle" class="axt">${esc(cfg.ylab || '')}</text>`;
+    cfg.series.forEach((s) => {
+      const d = s.pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join('');
+      g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="6 4"' : ''}/>`;
+    });
+    if (cfg.marker) {
+      const mx = cfg.marker.x, my = cfg.marker.y;
+      if (mx >= x0 && mx <= x1) g += `<line x1="${X(mx)}" x2="${X(mx)}" y1="${m.t}" y2="${Hh - m.b}" stroke="#b8860b" stroke-dasharray="3 3"/><circle cx="${X(mx)}" cy="${Y(my)}" r="5" fill="#fff" stroke="#b8860b" stroke-width="2.5"/><text x="${Math.min(X(mx) + 8, W - 90)}" y="${Math.max(Y(my) - 10, m.t + 24)}" class="ax" fill="#8a6508" font-weight="600">${esc(cfg.marker.label || 'Punto actual')}</text>`;
+    }
+    g += '<g class="hov"></g><rect class="ov" x="' + m.l + '" y="' + m.t + '" width="' + (W - m.l - m.r) + '" height="' + (Hh - m.t - m.b) + '" fill="transparent"/>';
+    host.innerHTML = (cfg.title ? `<div class="ct">${esc(cfg.title)}</div>` : '') + legend(cfg.series) + `<svg viewBox="0 0 ${W} ${Hh}" class="chart">${g}</svg>`;
+    const svg = host.querySelector('svg'), ov = svg.querySelector('.ov'), hov = svg.querySelector('.hov'), t = tip(host);
+    const base = cfg.series[0].pts;
+    ov.addEventListener('mousemove', (e) => {
+      const b = svg.getBoundingClientRect(), px = ((e.clientX - b.left) / b.width) * W, xv = x0 + ((px - m.l) / (W - m.l - m.r)) * (x1 - x0);
+      let i = 0, best = 1e99; base.forEach((p, k) => { const dd = Math.abs(p[0] - xv); if (dd < best) { best = dd; i = k; } });
+      const cx = X(base[i][0]);
+      hov.innerHTML = `<line x1="${cx}" x2="${cx}" y1="${m.t}" y2="${Hh - m.b}" stroke="#52514e" stroke-width="1"/>` + cfg.series.map((s) => (s.pts[i] ? `<circle cx="${cx}" cy="${Y(s.pts[i][1])}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2"/>` : '')).join('');
+      t.innerHTML = `<b>${esc(cfg.xlab ? cfg.xlab.split('(')[0].trim() : 'x')}: ${xf(base[i][0])}</b>` + cfg.series.map((s) => (s.pts[i] ? `<div><i style="background:${s.color}"></i>${esc(s.name)}: <b>${yf(s.pts[i][1])}</b></div>` : '')).join('');
+      t.style.display = 'block';
+      const hb = host.getBoundingClientRect(); let lx = e.clientX - hb.left + 14; if (lx > hb.width - 170) lx = e.clientX - hb.left - 170; t.style.left = lx + 'px'; t.style.top = e.clientY - hb.top - 10 + 'px';
+    });
+    ov.addEventListener('mouseleave', () => { hov.innerHTML = ''; t.style.display = 'none'; });
+  }
+
+  /* Barras agrupadas: cfg = {cats:[], series:[{name,color,vals}], yfmt, ylab, h} */
+  function bars(host, cfg) {
+    const W = 560, Hh = cfg.h || 300, m = { l: 62, r: 12, t: 12, b: 56 };
+    const vals = cfg.series.flatMap((s) => s.vals);
+    let y0 = cfg.ymin != null ? cfg.ymin : 0, y1 = cfg.ymax != null ? cfg.ymax : Math.max(...vals) * 1.1 || 1;
+    const Y = (v) => Hh - m.b - ((v - y0) / (y1 - y0 || 1)) * (Hh - m.t - m.b), yf = cfg.yfmt || ((v) => nf(v, 1));
+    const nC = cfg.cats.length, gw = (W - m.l - m.r) / nC, S = cfg.series.length, bw = Math.min(28, (gw * 0.7) / S);
+    let g = '';
+    ticks(y0, y1, 5).forEach((v) => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" class="ax">${yf(v)}</text>`; });
+    cfg.cats.forEach((c, i) => {
+      const cx = m.l + gw * (i + 0.5);
+      const lab = String(c); const parts = lab.length > 14 ? [lab.slice(0, lab.lastIndexOf(' ', 14) > 0 ? lab.lastIndexOf(' ', 14) : 14), lab.slice(lab.lastIndexOf(' ', 14) > 0 ? lab.lastIndexOf(' ', 14) + 1 : 14)] : [lab];
+      parts.forEach((p, k) => (g += `<text x="${cx}" y="${Hh - m.b + 16 + k * 12}" text-anchor="middle" class="ax">${esc(p)}</text>`));
+      cfg.series.forEach((s, k) => {
+        const v = s.vals[i], x = cx - (S * bw + (S - 1) * 2) / 2 + k * (bw + 2), y = Y(Math.max(v, y0)), h = Math.max(0, Hh - m.b - y);
+        g += `<path d="M${x} ${y + h}V${y + 4}Q${x} ${y} ${x + 4} ${y}H${x + bw - 4}Q${x + bw} ${y} ${x + bw} ${y + 4}V${y + h}Z" fill="${s.color}" class="bar" data-i="${i}" data-k="${k}"/>`;
+      });
+    });
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(y0)}" y2="${Y(y0)}" class="axl"/><text transform="translate(13 ${(m.t + Hh - m.b) / 2}) rotate(-90)" text-anchor="middle" class="axt">${esc(cfg.ylab || '')}</text>`;
+    host.innerHTML = (cfg.title ? `<div class="ct">${esc(cfg.title)}</div>` : '') + legend(cfg.series) + `<svg viewBox="0 0 ${W} ${Hh}" class="chart">${g}</svg>`;
+    const t = tip(host);
+    host.querySelectorAll('.bar').forEach((el) => {
+      el.addEventListener('mousemove', (e) => {
+        const i = +el.dataset.i, k = +el.dataset.k, hb = host.getBoundingClientRect();
+        t.innerHTML = `<b>${esc(cfg.cats[i])}</b><div><i style="background:${cfg.series[k].color}"></i>${esc(cfg.series[k].name)}: <b>${yf(cfg.series[k].vals[i])}</b></div>`;
+        t.style.display = 'block'; let lx = e.clientX - hb.left + 14; if (lx > hb.width - 190) lx = e.clientX - hb.left - 190; t.style.left = lx + 'px'; t.style.top = e.clientY - hb.top - 10 + 'px';
+      });
+      el.addEventListener('mouseleave', () => (t.style.display = 'none'));
+    });
+  }
+
+  /* Barra apilada horizontal con tabla: cfg = {items:[{name,color,val}], unit, total} */
+  function stack(host, cfg) {
+    const tot = cfg.items.reduce((a, c) => a + Math.max(0, c.val), 0) || 1;
+    let x = 0, seg = '';
+    cfg.items.forEach((it, i) => {
+      const w = (Math.max(0, it.val) / tot) * 100; if (w <= 0) return;
+      seg += `<div class="seg" data-i="${i}" style="width:calc(${w}% - 2px);background:${it.color}"></div>`; x += w;
+    });
+    host.innerHTML = (cfg.title ? `<div class="ct">${esc(cfg.title)}</div>` : '') + `<div class="stackbar">${seg}</div><table class="dist">` +
+      cfg.items.map((it) => `<tr><td><i style="background:${it.color}"></i>${esc(it.name)}</td><td class="num">${nf(it.val, cfg.d != null ? cfg.d : 1)} ${esc(cfg.unit)}</td><td class="num">${nf((100 * it.val) / tot, 1)} %</td></tr>`).join('') + '</table>';
+    const t = tip(host);
+    host.querySelectorAll('.seg').forEach((el) => {
+      el.addEventListener('mousemove', (e) => { const it = cfg.items[+el.dataset.i], hb = host.getBoundingClientRect(); t.innerHTML = `<b>${esc(it.name)}</b><div>${nf(it.val, 2)} ${esc(cfg.unit)} · ${nf((100 * it.val) / tot, 1)} %</div>`; t.style.display = 'block'; t.style.left = Math.min(e.clientX - hb.left + 12, hb.width - 200) + 'px'; t.style.top = e.clientY - hb.top - 40 + 'px'; });
+      el.addEventListener('mouseleave', () => (t.style.display = 'none'));
+    });
+  }
+  GS.charts = { line, bars, stack, COL, nf };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * flowsheet.js — Diagrama de flujo interactivo (20 operaciones del Proyecto, Fig. 1)
+ * Numeración y disposición en serpentín idénticas a la Figura 1 de Proyecto.pdf
+ * ========================================================================== */
+(function (root) {
+  const GS = (root.GS = root.GS || {});
+  const NW = 240, NH = 130, COLX = [40, 360, 680, 1000], ROWY = [30, 230, 430, 630, 830];
+  const GROUPCOL = { gris: '#6b7280', azul: '#3b6fb6', verde: '#1f9d8a', oro: '#b8860b' };
+  const nf = (x, d) => (isFinite(x) ? Number(x).toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–');
+
+  /* col,row en la cuadrícula del serpentín de la Figura 1 */
+  const NODES = [
+    { id: 1, name: 'Entrada de mineral', sub: 'Mineral de mina (ROM)', c: 0, r: 0, g: 'gris', icon: 'ore', tag: 'ROM',
+      specs: [['Tamaño', 'hasta 1 m', 'DOC'], ['Ley', '1–5 g/t típica (diseño 10 g/t)', 'DOC'], ['Humedad', '3–8 %', 'DOC']], vars: ['feedTpd', 'headGrade', 'moisture', 'opHours'],
+      kpi: (r) => [['Mineral seco', nf(r.p.feedTpd, 1), 't/d'], ['Oro contenido', nf(r.au.head, 0), 'g/d'], ['Humedad → agua', nf(r.water.Wore, 2), 'm³/d']] },
+    { id: 2, name: 'Tolva de gruesos', sub: 'Almacena mineral', c: 1, r: 0, g: 'azul', icon: 'hopper', tag: 'TV-101',
+      specs: [['Capacidad', '1–2 h de producción', 'DOC'], ['Ángulo de paredes', '> 60°', 'DOC'], ['Parrilla', '300–600 mm', 'DOC']], vars: ['romF80'],
+      kpi: (r) => [['Volumen para 1,5 h', nf(r.crush.binCoarse_m3, 1), 'm³'], ['Parrilla', '300–600', 'mm']] },
+    { id: 3, name: 'Trituradora de mandíbulas', sub: 'Reduce de ROM a 50–100 mm', c: 2, r: 0, g: 'azul', icon: 'jaw', tag: 'CR-101',
+      specs: [['Alimentación', '< 600 mm', 'DOC'], ['Abertura de descarga', '40–100 mm', 'DOC'], ['Relación de reducción', '4:1 a 8:1', 'DOC'], ['Capacidad', 'sin dato (supuesto)', 'SUP']], vars: ['romF80', 'jawCSS', 'crushCap', 'crushHours', 'wi'],
+      kpi: (r) => [['Carga', nf(r.crush.tph, 1) + ' t/h', ''], ['Utilización', nf(r.crush.util * 100, 0), '%'], ['Energía (Bond)', nf(r.crush.wSp, 2), 'kWh/t']] },
+    { id: 4, name: 'Criba vibratoria', sub: 'Separa por tamaño', c: 3, r: 0, g: 'azul', icon: 'screen', tag: 'SC-101',
+      specs: [['Malla', '12–25 mm', 'DOC'], ['Inclinación', '15–20°', 'DOC'], ['Eficiencia', '85–95 %', 'DOC']], vars: ['screenAp', 'screenEff'],
+      kpi: (r) => [['Carga circulante', nf(r.crush.cl, 0), '%'], ['Recirculación', nf(r.crush.Rcr, 1), 't/d']] },
+    { id: 8, name: 'Pulpa', sub: 'Mineral y agua', c: 0, r: 1, g: 'verde', icon: 'tank', tag: 'TK-201',
+      specs: [['Sólidos', '30–45 %', 'DOC'], ['Densidad', '1,3–1,5 t/m³', 'DOC'], ['P80', '75–150 µm', 'DOC']], vars: ['cycOFSolids', 'p80'],
+      kpi: (r) => [['Sólidos', nf(r.streams.find((s) => s.id === 's10').pct, 1), '%'], ['P80', nf(r.p.p80, 0), 'µm'], ['−75 µm', nf(r.pass75, 0), '%']] },
+    { id: 7, name: 'Hidrociclón', sub: 'Clasifica por tamaño', c: 1, r: 1, g: 'azul', icon: 'cyclone', tag: 'HC-201',
+      specs: [['Presión', '40–100 kPa', 'DOC'], ['Sólidos en alimentación', '30–50 %', 'DOC'], ['Rebose → pulpa fina', 'gruesos al molino', 'DOC']], vars: ['cycFeedSolids', 'cycOFSolids'],
+      kpi: (r) => [['Sólidos descarga', nf(r.mill.ufSolids, 0), '%'], ['Rebose', nf(r.streams.find((s) => s.id === 's09').pct, 0), '% sól.'], ['Agua dilución', nf(r.mill.Wsump, 1), 'm³/d']] },
+    { id: 6, name: 'Molino de bolas', sub: 'Reduce a polvo', c: 2, r: 1, g: 'azul', icon: 'mill', tag: 'ML-201',
+      specs: [['P80', '75–150 µm', 'DOC'], ['Sólidos', '65–75 %', 'DOC'], ['Velocidad crítica', '70–80 %', 'DOC'], ['Llenado de bolas', '30–40 %', 'DOC'], ['Carga circulante', '150–300 %', 'DOC'], ['Potencia instalada', 'sin dato (supuesto)', 'SUP']], vars: ['p80', 'wi', 'millPower', 'millSolids', 'cycCL', 'rrN'],
+      kpi: (r) => [['Potencia requerida', nf(r.mill.kWreq, 1), 'kW'], ['Utilización', nf(r.mill.util * 100, 0), '%'], ['Energía (Bond)', nf(r.mill.wSp, 1), 'kWh/t']] },
+    { id: 5, name: 'Tolva de finos', sub: 'Almacena finos', c: 3, r: 1, g: 'azul', icon: 'bin', tag: 'TV-102',
+      specs: [['Capacidad', '8–24 h', 'DOC'], ['Humedad', '< 8 %', 'DOC']], vars: [],
+      kpi: (r) => [['Volumen para 16 h', nf(r.crush.binFines_m3, 1), 'm³'], ['Humedad', nf(r.p.moisture, 1), '%']] },
+    { id: 9, name: 'Knelson', sub: 'Concentra oro libre', c: 0, r: 2, g: 'verde', icon: 'knelson', tag: 'GR-301',
+      specs: [['Fuerza centrífuga', '60–200 G', 'DOC'], ['Agua de fluidización', '20–70 kPa', 'DOC'], ['Sólidos', '30–40 %', 'DOC'], ['Tamaño', '< 6 mm', 'DOC'], ['Recupera', '30–70 % del oro libre', 'DOC']], vars: ['gravFree', 'knelsonMass', 'knelsonRec'],
+      kpi: (r) => [['Concentrado', nf(r.grav.kgConc, 0), 'kg/d'], ['Oro al concentrado', nf(r.grav.auK, 1), 'g/d']] },
+    { id: 10, name: 'Mesa Wilfley', sub: 'Oro a fundición', c: 1, r: 2, g: 'verde', icon: 'table', tag: 'GR-302',
+      specs: [['Sólidos', '20–30 %', 'DOC'], ['Golpes', '250–300/min', 'DOC'], ['Carrera', '10–25 mm', 'DOC'], ['Pendiente', '2–6°', 'DOC']], vars: ['wilfleyRec', 'wilfleyMass'],
+      kpi: (r) => [['Oro a fundición', nf(r.grav.auW, 1), 'g/d'], ['Concentrado', nf(r.grav.Mw * 1000, 1), 'kg/d']] },
+    { id: 11, name: 'Flotación', sub: 'Sulfuros auríferos', c: 2, r: 2, g: 'verde', icon: 'flot', tag: 'FL-301',
+      specs: [['Sólidos', '25–35 %', 'DOC'], ['pH', '7–10', 'DOC'], ['Tiempo', '10–30 min por etapa', 'DOC'], ['Xantato', '20–100 g/t', 'DOC'], ['Espumante MIBC', '10–40 g/t', 'DOC']], vars: ['sulfAu', 'sulfLeach', 'flotSolids', 'flotPull', 'flotAuRec', 'xanthate', 'mibc'],
+      kpi: (r) => [['Concentrado', nf(r.flot.Mc, 2), 't/d'], ['Oro en concentrado', nf(r.flot.auConc, 1), 'g/d'], ['Sólidos', nf(r.flot.feedSolidsPct, 0), '%']] },
+    { id: 12, name: 'Filtro prensa', sub: 'Deshidrata concentrado', c: 3, r: 2, g: 'verde', icon: 'press', tag: 'FP-301',
+      specs: [['Presión', '6–15 bar', 'DOC'], ['Humedad de la torta', '8–15 %', 'DOC'], ['Ciclo', '1–2 h', 'DOC']], vars: ['cakeConcMoist'],
+      kpi: (r) => [['Torta', nf(r.flot.Mc, 2), 't/d'], ['Filtrado', nf(r.streams.find((s) => s.id === 's15').water - r.streams.find((s) => s.id === 's17').water, 2), 'm³/d'], ['Destino', 'repulpada al CIL', '']] },
+    { id: 13, name: 'Espesador', sub: 'Densifica pulpa', c: 3, r: 3, g: 'oro', icon: 'thick', tag: 'TH-401',
+      specs: [['Floculante', '10–40 g/t', 'DOC'], ['Sólidos en el fondo', '45–60 %', 'DOC'], ['Sedimentación', '0,5–5 m/h', 'DOC']], vars: ['thickUF', 'floc', 'settleRate'],
+      kpi: (r) => [['Área requerida', nf(r.thick.area, 1), 'm²'], ['Diámetro', nf(r.thick.diam, 1), 'm'], ['Agua de rebose', nf(r.thick.Wof, 1), 'm³/d']] },
+    { id: 14, name: 'Cianuración (CIL)', sub: 'Disuelve y adsorbe el oro', c: 2, r: 3, g: 'oro', icon: 'cil', tag: 'CIL-401…406',
+      specs: [['Tanques', '6 × Ø 2,8 m × 3,2 m (≈ 19,7 m³)', 'DOC'], ['Volumen efectivo', '15,7 m³ por tanque', 'DOC'], ['pH', '10,5–11,5', 'DOC'], ['NaCN', '300–500 ppm', 'DOC'], ['O₂ disuelto', '6–8 mg/L', 'DOC'], ['Sólidos', '35–50 % (diseño 40 %)', 'DOC'], ['Carbón', '10–15 g/L (tanques 2–6)', 'DOC'], ['Recuperación esperada', '85–93 % con aire; hasta 96 % con O₂', 'DOC'], ['Agitador', '5,5–7,5 kW', 'DOC']],
+      vars: ['cilSolids', 'tauMode', 'tauTarget', 'nacn', 'ph', 'dox', 'oxidant', 'temp', 'altitude', 'carbonConc', 'carbonXfer', 'kAds', 'limeDose', 'pbNitrate', 'cnSideFrac'],
+      kpi: (r) => [['Recuperación CIL', nf(r.au.recCIL, 1), '%'], ['Residencia total', nf(r.cil.tauTot, 1), 'h'], ['NaCN', nf(r.reag.nacn, 1), 'kg/d']] },
+    { id: 15, name: 'Desorción (elución)', sub: 'El oro sale del carbón', c: 1, r: 3, g: 'oro', icon: 'desorp', tag: 'EL-401',
+      specs: [['Zadra', '90–95 °C, 24–48 h', 'DOC'], ['AARL', '110–140 °C, 3–4 bar, 8–12 h', 'DOC'], ['Lavado ácido', 'HCl ≈ 3 %', 'DOC'], ['Regeneración', '650–750 °C', 'DOC'], ['Carbón cargado', '1–10 kg Au/t C', 'DOC'], ['NaOH', '1–2 %', 'DOC']], vars: ['eluEff', 'richAu', 'eluTemp', 'carbonXfer'],
+      kpi: (r) => [['Carga del carbón', nf(r.elu.loading, 2), 'kg Au/t C'], ['Eluato', nf(r.elu.eluVol, 1), 'm³/d'], ['Carbón', nf(r.elu.carbon, 0), 'kg/d']] },
+    { id: 16, name: 'Electroobtención', sub: 'Oro en cátodos', c: 0, r: 3, g: 'oro', icon: 'ew', tag: 'EW-401',
+      specs: [['Voltaje', '2–4 V', 'DOC'], ['Corriente', '100–500 A por celda', 'DOC'], ['Temperatura', '60–80 °C', 'DOC'], ['pH', '> 11', 'DOC'], ['Cátodos', 'lana de acero', 'DOC'], ['Eficiencia', '90–99 %', 'DOC']], vars: ['ewEff', 'ewVolt', 'ewAmp', 'ewCells', 'richAu'],
+      kpi: (r) => [['Rica → pobre', nf(r.p.richAu, 0) + ' → ' + nf(r.elu.poor, 1), 'mg/L'], ['Oro depositado', nf(r.au.eluted, 1), 'g/d']] },
+    { id: 17, name: 'Fundición', sub: 'Lodo a barra doré', c: 0, r: 4, g: 'gris', icon: 'furnace', tag: 'FD-501',
+      specs: [['Temperatura', '1100–1300 °C', 'DOC'], ['Tiempo', '1–3 h por colada', 'DOC'], ['Fundentes', 'bórax, sílice, carbonato de sodio', 'DOC']], vars: ['downRec', 'doreFine'],
+      kpi: (r) => [['Oro al doré', nf(r.au.dore, 1), 'g/d'], ['Barra doré', nf(r.au.doreKg, 3), 'kg/d']] },
+    { id: 18, name: 'Refinación', sub: 'Oro de 99,99 %', c: 1, r: 4, g: 'gris', icon: 'refine', tag: 'RF-501',
+      specs: [['Miller', 'Cl₂ a ~1100 °C → 99,5 %', 'DOC'], ['Wohlwill', 'electrólisis HAuCl₄/HCl, 60–70 °C → 99,99 %', 'DOC'], ['Doré', '60–95 % Au', 'DOC']], vars: ['doreFine', 'opDays'],
+      kpi: (r) => [['Oro refinado', nf(r.au.dore, 1), 'g/d'], ['Anual', nf(r.au.byYear_kg, 1), 'kg/año'], ['', nf(r.au.oz_d, 2), 'oz t/d']] },
+    { id: 19, name: 'Destrucción de cianuro', sub: 'SO₂/aire (proceso INCO)', c: 2, r: 4, g: 'gris', icon: 'detox', tag: 'DT-601',
+      specs: [['Proceso INCO', 'pH 8–9; SO₂:CN 3–5 g/g', 'DOC'], ['Catalizador', 'cobre', 'DOC'], ['Tiempo', '30–120 min', 'DOC'], ['Meta CNWAD', '< 50 mg/L (o el permiso)', 'DOC']], vars: ['detoxRatio', 'detoxTime', 'cnLimit'],
+      kpi: (r) => [['CNWAD entra → sale', nf(r.detox.cnIn, 0) + ' → ' + nf(r.detox.cnRes, 1), 'mg/L'], ['SO₂', nf(r.detox.so2, 1), 'kg/d']] },
+    { id: 20, name: 'Filtro prensa', sub: 'Relaves secos', c: 3, r: 4, g: 'gris', icon: 'press2', tag: 'FP-601',
+      specs: [['Presión', '6–15 bar', 'DOC'], ['Humedad', '15–20 %', 'DOC'], ['Ciclo', '45–90 min', 'DOC']], vars: ['tailMoist', 'waterRecycle'],
+      kpi: (r) => [['Relave seco', nf(r.sums.tailSolids, 1), 't/d'], ['Agua recuperada', nf(r.water.recov, 0), 'm³/d'], ['Ley relave', nf(r.au.tailGrade, 2), 'g/t']] },
+  ];
+  const NODE = Object.fromEntries(NODES.map((n) => [n.id, n]));
+  const nx = (n) => COLX[n.c], ny = (n) => ROWY[n.r];
+  const P = (id, side, dx = 0, dy = 0) => { const n = NODE[id], x = nx(n), y = ny(n); return { L: [x, y + NH / 2], R: [x + NW, y + NH / 2], T: [x + NW / 2, y], B: [x + NW / 2, y + NH] }[side].map((v, i) => v + (i ? dy : dx)); };
+  const cx = (id) => nx(NODE[id]) + NW / 2;
+
+  const GEO = {
+    s01: [P(1, 'R'), P(2, 'L')], s02: [P(2, 'R'), P(3, 'L')], s03: [P(3, 'R'), P(4, 'L')],
+    s04: [P(4, 'T', -50), [cx(4) - 50, 12], [cx(3) + 50, 12], P(3, 'T', 50)],
+    s05: [P(4, 'B'), P(5, 'T')], s06: [P(5, 'L'), P(6, 'R')], s07: [P(6, 'L'), P(7, 'R')],
+    s08: [P(7, 'T', 50), [cx(7) + 50, 206], [cx(6) - 50, 206], P(6, 'T', -50)],
+    s09: [P(7, 'L'), P(8, 'R')], s10: [P(8, 'B'), P(9, 'T')], s11: [P(9, 'R'), P(10, 'L')],
+    s12: [P(9, 'B', -50), [cx(9) - 50, 585], [cx(11) - 50, 585], P(11, 'B', -50)],
+    s13: [P(10, 'R'), P(11, 'L')],
+    s14: [P(10, 'B', 50), [cx(10) + 50, 600], [320, 600], [320, 795], [230, 795], P(17, 'T', 70)],
+    s15: [P(11, 'R'), P(12, 'L')],
+    s16: [P(11, 'B', 50), [cx(11) + 50, 608], [cx(13) - 20, 608], P(13, 'T', -20)],
+    s17: [P(12, 'B', 50), [cx(12) + 50, 580], [cx(14) + 80, 580], P(14, 'T', 80)],
+    s18: [P(13, 'L'), P(14, 'R')],
+    s19: [P(14, 'L', 0, -20), P(15, 'R', 0, -20)], s20: [P(15, 'L', 0, -20), P(16, 'R', 0, -20)], s21: [P(16, 'R', 0, 20), P(15, 'L', 0, 20)],
+    s22: [P(16, 'B', -50), P(17, 'T', -50)], s23: [P(17, 'R'), P(18, 'L')],
+    s24: [P(14, 'B'), P(19, 'T')], s25: [P(19, 'R'), P(20, 'L')], s26: [P(20, 'B'), [cx(20), 995]],
+  };
+  const TYPECOL = { ore: '#6b7280', pulp: '#2a78d6', carbon: '#3f3f46', solution: '#1baf7a', gold: '#c58a00', tailings: '#92400e', recycle: '#b4478c' };
+  const TYPENAME = { ore: 'Mineral', pulp: 'Pulpa', carbon: 'Carbón cargado', solution: 'Solución', gold: 'Oro / concentrado', tailings: 'Relave', recycle: 'Recirculación' };
+
+  /* Íconos esquemáticos (viewBox 0 0 70 60) */
+  const ICONS = {
+    ore: '<path d="M6 48 L22 24 L34 40 L44 30 L62 48Z" class="f"/><path d="M4 52H66" class="s"/><circle cx="46" cy="20" r="5" class="f"/>',
+    hopper: '<path d="M10 10H60L44 44H26Z" class="f"/><path d="M26 44V54H44V44" class="s"/><path d="M14 18H56" class="s"/>',
+    jaw: '<path d="M14 8L30 8L34 48L20 48Z" class="f"/><path d="M56 8L42 10L38 48L50 52Z" class="f"/><circle cx="22" cy="28" r="3" class="s"/>',
+    screen: '<path d="M6 40L58 18L64 28L12 50Z" class="f"/><path d="M14 38L52 22M20 42L58 26M26 46L62 30" class="s"/><path d="M14 52L10 56M56 40L60 44" class="s"/>',
+    tank: '<ellipse cx="35" cy="20" rx="26" ry="7" class="f"/><path d="M9 20V42C9 46 22 50 35 50S61 46 61 42V20" class="f"/><path d="M35 8V30M26 8H44" class="s"/>',
+    cyclone: '<path d="M14 8H56V22L42 52H28L14 22Z" class="f"/><path d="M56 14H66M35 52V58M6 14H14" class="s"/>',
+    mill: '<ellipse cx="35" cy="30" rx="24" ry="14" class="f"/><path d="M6 24H12M58 24H64M6 36H12M58 36H64" class="s"/><circle cx="26" cy="30" r="2.5" class="s"/><circle cx="35" cy="26" r="2.5" class="s"/><circle cx="44" cy="31" r="2.5" class="s"/><circle cx="34" cy="35" r="2.5" class="s"/>',
+    bin: '<path d="M10 12H60L48 38H22Z" class="f"/><path d="M22 38V50H48V38" class="s"/>',
+    knelson: '<path d="M18 10H52V40L44 50H26L18 40Z" class="f"/><path d="M18 22H52M18 32H52" class="s"/><path d="M56 22H64V40H56" class="s"/>',
+    table: '<path d="M6 40L58 18L64 28L12 50Z" class="f"/><path d="M12 44L58 24" class="s"/><path d="M8 54H60" class="s"/>',
+    flot: '<path d="M6 22H24V50H6ZM26 22H44V50H26ZM46 22H64V50H46Z" class="f"/><path d="M10 28H20M30 28H40M50 28H60" class="s"/><path d="M6 16H64" class="s"/>',
+    press: '<path d="M6 18H14V46H6ZM56 18H64V46H56Z" class="f"/><path d="M14 22H56V42H14Z" class="f"/><path d="M20 22V42M26 22V42M32 22V42M38 22V42M44 22V42M50 22V42" class="s"/><path d="M6 50H64" class="s"/>',
+    press2: '<path d="M6 14H12V40H6ZM42 14H48V40H42Z" class="f"/><path d="M12 18H42V36H12Z" class="f"/><path d="M18 18V36M24 18V36M30 18V36M36 18V36" class="s"/><path d="M52 48L58 34L64 48Z" class="f"/><path d="M4 48H48" class="s"/>',
+    thick: '<path d="M4 22H66L56 42H14Z" class="f"/><path d="M35 8V34M26 8H44" class="s"/><path d="M4 22V18M66 22V18" class="s"/>',
+    cil: '<path d="M4 18H20V50H4ZM25 18H41V50H25ZM46 18H62V50H46Z" class="f"/><path d="M12 8V30M33 8V30M54 8V30M8 8H16M29 8H37M50 8H58" class="s"/><circle cx="12" cy="42" r="2" class="s"/><circle cx="33" cy="40" r="2" class="s"/><circle cx="54" cy="43" r="2" class="s"/>',
+    desorp: '<path d="M10 24H24V50H10Z" class="f"/><path d="M32 8H52L56 14V48L52 52H32L28 48V14Z" class="f"/><path d="M24 36H28M56 30H64M42 8V2" class="s"/>',
+    ew: '<path d="M6 16H64V50H6Z" class="f"/><path d="M16 12V44M26 12V44M36 12V44M46 12V44M56 12V44" class="s"/><path d="M6 24H64" class="s"/>',
+    furnace: '<path d="M10 20H50V48H10Z" class="f"/><path d="M18 48V38C18 32 30 32 30 38V48" class="s"/><path d="M50 26L64 34L58 44" class="s"/><path d="M52 50H66" class="s"/>',
+    refine: '<path d="M8 24H44V50H8Z" class="f"/><path d="M48 44L54 32H62L66 44Z" class="f"/><path d="M52 44L56 36H60L63 44" class="s"/><circle cx="26" cy="37" r="7" class="s"/>',
+    detox: '<ellipse cx="30" cy="18" rx="22" ry="6" class="f"/><path d="M8 18V44C8 48 18 52 30 52S52 48 52 44V18" class="f"/><path d="M30 6V28M22 6H38" class="s"/><path d="M56 36H66M56 30L62 36L56 42" class="s"/>',
+  };
+
+  function status(n, r) {
+    const f = r.flags, has = (...ids) => f.filter((x) => ids.includes(x.id));
+    const map = { 3: ['crush_cap', 'crush_circ'], 6: ['mill_cap', 'mill_water', 'sump_water'], 7: ['cyc_water', 'cyc_uf'], 11: ['flot_water', 'flot_dil'], 13: ['thick_water'], 14: ['tank_vol', 'tank_fill', 'ph_hcn', 'do_sat', 'carbon_sat', 'carbon_load', 'sol_loss', 'cil_dil'], 15: ['carbon_low'], 16: ['ew_poor'], 19: ['cn_limit', 'cnwad_in'], 20: ['tail_water'] };
+    const hit = has(...(map[n.id] || []));
+    if (hit.some((x) => x.lvl === 'error')) return 'error';
+    if (hit.some((x) => x.lvl === 'warn')) return 'warn';
+    return 'ok';
+  }
+
+  function stats(r, sid, mode) {
+    const s = r.streams.find((x) => x.id === sid); if (!s) return '';
+    if (mode === 'solids') return s.solids > 0 ? nf(s.solids, s.solids < 1 ? 2 : 1) + ' t/d' : (s.type === 'carbon' ? nf(s.solids * 1000, 0) + ' kg/d' : '');
+    if (mode === 'water') return s.water > 0 ? nf(s.water, 1) + ' m³/d' : '';
+    if (mode === 'pct') return s.solids > 0 && s.water > 0 ? nf(s.pct, 0) + ' % sól.' : '';
+    if (mode === 'au') return s.au > 0 ? nf(s.au, s.au < 10 ? 1 : 0) + ' g Au/d' : '';
+    return '';
+  }
+
+  function render(host, r, opts) {
+    const mode = opts.mode, sel = opts.sel;
+    let g = '';
+    // Corrientes
+    r.streams.forEach((s) => {
+      const pts = GEO[s.id]; if (!pts) return;
+      const flow = Math.max(s.solids, s.water / 3, s.au / 150, 0.05);
+      const w = Math.max(1.6, Math.min(6.5, 1.2 + 1.1 * Math.log(1 + flow)));
+      const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join('');
+      const col = TYPECOL[s.type] || '#555', dash = s.type === 'recycle' ? 'stroke-dasharray="7 5"' : '';
+      const act = sel && sel.kind === 's' && sel.id === s.id ? ' sel' : '';
+      g += `<g class="strm${act}" data-s="${s.id}"><path d="${d}" fill="none" stroke="transparent" stroke-width="16"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round" ${dash} marker-end="url(#ar-${s.type})"/>${s.type !== 'recycle' ? `<path d="${d}" class="flow" fill="none" stroke="#fff" stroke-width="${Math.max(1, w * 0.35)}" stroke-dasharray="3 13" stroke-linejoin="round"/>` : ''}`;
+      // etiqueta
+      const lab = stats(r, s.id, mode);
+      if (lab) {
+        let bi = 0, bl = -1; for (let i = 0; i < pts.length - 1; i++) { const l = Math.abs(pts[i + 1][0] - pts[i][0]) + Math.abs(pts[i + 1][1] - pts[i][1]); if (l > bl) { bl = l; bi = i; } }
+        const mx = (pts[bi][0] + pts[bi + 1][0]) / 2, my = (pts[bi][1] + pts[bi + 1][1]) / 2, tw = lab.length * 6.1 + 12;
+        g += `<g class="lab"><rect x="${mx - tw / 2}" y="${my - 10}" width="${tw}" height="19" rx="9" fill="#fff" stroke="${col}" stroke-width="1.2"/><text x="${mx}" y="${my + 4}" text-anchor="middle">${lab}</text></g>`;
+      }
+      g += '</g>';
+    });
+    // Nodos
+    NODES.forEach((n) => {
+      const x = nx(n), y = ny(n), col = GROUPCOL[n.g], st = status(n, r), act = sel && sel.kind === 'n' && sel.id === n.id ? ' sel' : '';
+      const k = n.kpi(r).slice(0, 3);
+      g += `<g class="node${act}" data-n="${n.id}" transform="translate(${x} ${y})" tabindex="0" role="button" aria-label="${n.id}. ${n.name}">
+        <rect class="card" width="${NW}" height="${NH}" rx="8"/><rect width="${NW}" height="30" rx="8" fill="${col}"/><rect y="22" width="${NW}" height="8" fill="${col}"/>
+        <circle cx="19" cy="15" r="11" fill="#fff"/><text x="19" y="19.5" text-anchor="middle" class="num" fill="${col}">${n.id}</text>
+        <text x="38" y="19.5" class="ttl">${n.name}</text>
+        <g transform="translate(8 40) scale(0.95)" class="ico">${ICONS[n.icon]}</g>
+        <text x="8" y="116" class="sub">${n.sub}</text>
+        ${k.map((it, i) => `<text x="${NW - 8}" y="${52 + i * 18}" text-anchor="end" class="kv"><tspan class="kn">${it[0] ? it[0] + ' ' : ''}</tspan><tspan class="kx">${it[1]}</tspan><tspan class="ku"> ${it[2]}</tspan></text>`).join('')}
+        <circle cx="${NW - 12}" cy="15" r="5" class="st st-${st}"/></g>`;
+    });
+    g += `<text x="${cx(20)}" y="1008" text-anchor="middle" class="term">Depósito de relaves filtrados</text><path d="M${cx(18)} 960V995" stroke="#c58a00" stroke-width="5" marker-end="url(#ar-gold)"/><text x="${cx(18)}" y="1008" text-anchor="middle" class="term">Oro refinado 99,99 %</text>`;
+    const defs = '<defs>' + Object.entries(TYPECOL).map(([t, c]) => `<marker id="ar-${t}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="${c}"/></marker>`).join('') + '</defs>';
+    host.innerHTML = `<svg viewBox="0 0 1280 1020" class="fs" role="img" aria-label="Diagrama de flujo de la planta">${defs}${g}</svg>`;
+  }
+
+  GS.flow = { NODES, NODE, GEO, TYPECOL, TYPENAME, GROUPCOL, render, status, stats };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
+/* ============================================================================
+ * ui.js — Interfaz del simulador (SPA sin dependencias).
+ * Estado único: state.params → GS.run() → state.r → render de cada página.
+ * ========================================================================== */
+(function (root) {
+  const GS = root.GS, C = GS.charts, doc = root.document;
+  const KEY_P = 'gs_params_v1', KEY_S = 'gs_scenarios_v1';
+  const nf = (x, d) => (isFinite(x) ? Number(x).toLocaleString('es-CO', { minimumFractionDigits: d == null ? 1 : d, maximumFractionDigits: d == null ? 1 : d }) : '–');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const $ = (s, el) => (el || doc).querySelector(s);
+  const $$ = (s, el) => Array.from((el || doc).querySelectorAll(s));
+  const PB = GS.PARAM_BY_ID;
+  const clamp = (v, p) => Math.min(p.max != null ? p.max : Infinity, Math.max(p.min != null ? p.min : -Infinity, v));
+  const store = {
+    get(k, d) { try { const v = root.localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+    set(k, v) { try { root.localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  };
+
+  const state = {
+    params: Object.assign(GS.defaults(), store.get(KEY_P, {})),
+    page: 'inicio', sel: { kind: 'n', id: 14 }, labelMode: 'solids', dtab: 'res',
+    scenarios: store.get(KEY_S, []), compare: [], opt: null, optObj: 'oro', optMin: 85, cur: null,
+  };
+  Object.keys(state.params).forEach((k) => { if (!PB[k]) delete state.params[k]; });
+  let R = null, VAL = [];
+
+  const PAGES = [
+    ['inicio', 'Inicio', 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10'],
+    ['flujo', 'Diagrama de flujo', 'M4 5h6v5H4zM14 14h6v5h-6zM10 7.5h4a3 3 0 013 3V14'],
+    ['variables', 'Variables', 'M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6'],
+    ['resultados', 'Resultados', 'M4 20V10M10 20V4M16 20v-8M22 20H2'],
+    ['graficos', 'Gráficos', 'M3 20h18M5 16l4-5 4 3 6-8'],
+    ['escenarios', 'Escenarios', 'M4 5h7v7H4zM13 12h7v7h-7zM11 8.5h3a2 2 0 012 2V12'],
+    ['equipos', 'Equipos', 'M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2'],
+    ['modelo', 'Modelo y datos', 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7'],
+  ];
+  const PRESETS = [
+    ['Diseño del Proyecto', 'Valores del Proyecto §3 (50 t/d, 24 h, 400 ppm NaCN).', {}],
+    ['Alimentación +30 % (65 t/d)', 'Más mineral con los mismos tanques: baja el tiempo de residencia.', { feedTpd: 65 }],
+    ['Molienda gruesa (P80 150 µm)', 'Menos energía de molienda, menor liberación del oro.', { p80: 150 }],
+    ['Molienda fina (P80 60 µm)', 'Más energía de molienda, mayor recuperación.', { p80: 60 }],
+    ['8 tanques (≈ 32 h)', 'Más tiempo de residencia con dos tanques adicionales.', { nTanks: 8 }],
+    ['NaCN 300 ppm', 'Límite bajo del rango del Proyecto §3.1.', { nacn: 300 }],
+    ['NaCN 500 ppm', 'Límite alto del rango del Proyecto §3.1.', { nacn: 500 }],
+    ['Oxígeno (DO 20 mg/L)', 'Oxígeno en lugar de aire; no modela el efecto del nitrato de plomo.', { oxidant: 'oxígeno', dox: 20 }],
+  ];
+
+  /* ------------------------------ cálculo ------------------------------ */
+  let valCache = null;
+  function compute() {
+    R = GS.run(state.params);
+    VAL = GS.validate(state.params, R);
+    valCache = null;
+  }
+  function counts() {
+    let e = 0, w = 0;
+    VAL.forEach((v) => { if (v.lvl === 'error') e++; else if (v.lvl === 'warn') w++; });
+    R.flags.forEach((v) => { if (v.lvl === 'error') e++; else if (v.lvl === 'warn') w++; });
+    return { e, w };
+  }
+  let saveT = 0;
+  function persist() { clearTimeout(saveT); saveT = setTimeout(() => store.set(KEY_P, state.params), 250); }
+
+  /* ------------------------------ piezas ------------------------------- */
+  const badge = (s) => `<span class="badge b-${s}" title="${esc(GS.SRC_LABEL[s])}">${esc(GS.SRC_LABEL[s])}</span>`;
+  const tile = (l, v, u, d, hero) => `<div class="tile${hero ? ' hero' : ''}"><small>${l}</small><b>${v}</b><u>${u || ''}</u>${d ? `<div class="d">${d}</div>` : ''}</div>`;
+  function ctl(id) {
+    const p = PB[id], v = state.params[id], ed = v !== p.def;
+    let inp;
+    if (p.choices) inp = `<span></span><select data-p="${id}" aria-label="${esc(p.label)}">${p.choices.map((c) => `<option${c === v ? ' selected' : ''}>${c}</option>`).join('')}</select>`;
+    else inp = `<input type="range" data-p="${id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${v}" aria-label="${esc(p.label)}"><input type="number" data-p="${id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${v}" aria-label="${esc(p.label)}">`;
+    return `<div class="prow${ed ? ' ed' : ''}" data-row="${id}"><div class="lb"><b>${esc(p.label)}</b> ${badge(p.src)}<small>${esc(p.ref || '')}</small></div>${inp}<div class="un"><span>${esc(p.unit)}</span><button data-reset="${id}" title="Valor inicial: ${esc(p.def)}" aria-label="Restablecer">↺</button></div></div>`;
+  }
+  const flagHtml = (fl) => fl.map((f) => `<div class="flg ${f.lvl}"><b>${f.lvl === 'error' ? 'Error' : f.lvl === 'warn' ? 'Advertencia' : 'Nota'}:</b> ${esc(f.msg)}</div>`).join('');
+  function table(head, rows, cls) {
+    return `<div class="tw"><table class="${cls || ''}"><thead><tr>${head.map((h, i) => `<th${h[0] === '#' ? ' class="num"' : ''}>${esc(h.replace(/^#/, ''))}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c, i) => `<td${head[i] && head[i][0] === '#' ? ' class="num"' : ''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  function kv(list) { return `<div class="kvl">${list.map((x) => `<span>${x[0]}</span><span>${x[1]}</span>`).join('')}</div>`; }
+  const sweep = (id, vals, fn, base) => GS.sweep(Object.assign({}, state.params, base || {}), id, vals, fn).map((o) => [o.x, o.y]);
+  const range = (a, b, n) => Array.from({ length: n }, (_, i) => +(a + ((b - a) * i) / (n - 1)).toFixed(4));
+
+  /* ------------------------------ barra superior ------------------------ */
+  function topbar() {
+    const c = counts(), cls = c.e ? 'error' : c.w ? 'warn' : 'ok';
+    const txt = c.e ? `${c.e} error${c.e > 1 ? 'es' : ''}` : c.w ? `${c.w} advertencia${c.w > 1 ? 's' : ''}` : 'Balances cerrados';
+    $('#top').innerHTML = [
+      ['Recuperación global', nf(R.au.recGlobal, 1), '%'], ['Oro en doré', nf(R.au.dore, 0), 'g/d'], ['Alimentación', nf(state.params.feedTpd, 1), 't/d'],
+      ['NaCN', nf(R.reag.nacn, 1), 'kg/d'], ['Energía', nf(R.energy.perT, 1), 'kWh/t'],
+    ].map((k) => `<div class="kp"><small>${k[0]}</small><b>${k[1]}</b><u>${k[2]}</u></div>`).join('') +
+      `<span class="sp"></span><button class="chip ${cls}" data-go="resultados" title="Ver validación">${cls === 'ok' ? '✓' : '!'} ${txt}</button>`;
+  }
+
+  /* ------------------------------ INICIO -------------------------------- */
+  function pInicio() {
+    const sup = GS.PARAMS.filter((p) => p.src === 'SUP').length;
+    return `<h1>Simulador de planta de beneficio de oro</h1>
+    <p class="lead">Planta de 50 t/d con lixiviación por cianuración en carbón (CIL), reconstruida a partir de <b>Proyecto.pdf</b> y completada con la tesis de Srithammavut (2008), Yahya et al. (2020) y Ray &amp; Ray. Cada valor muestra su origen: documento, rango del documento, bibliografía, calibrado o supuesto.</p>
+    <div class="tiles">
+      ${tile('Recuperación global', nf(R.au.recGlobal, 1), '%', 'Proyecto: 90 % en el CIL', true)}
+      ${tile('Oro en doré', nf(R.au.dore, 0), 'g/d', nf(R.au.byYear_kg, 0) + ' kg/año (' + state.params.opDays + ' d)', true)}
+      ${tile('Ley del relave', nf(R.au.tailGrade, 2), 'g/t', 'Proyecto: 1 g/t')}
+      ${tile('Tiempo de residencia', nf(R.cil.tauTot, 1), 'h', R.cil.N + ' tanques de ' + nf(R.cil.Veff, 1) + ' m³')}
+      ${tile('Agua fresca', nf(R.water.fresh, 1), 'm³/d', nf(R.water.freshPerT, 2) + ' m³/t')}
+      ${tile('NaCN', nf(R.reag.nacn, 1), 'kg/d', nf(R.reag.nacnSpec, 2) + ' kg/t')}
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Cómo usarlo</h2>
+        <ol class="note" style="padding-left:18px;margin:0;line-height:1.7">
+          <li>En <b>Diagrama de flujo</b> haga clic en un equipo o una corriente para ver sus datos y cambiar sus variables.</li>
+          <li>En <b>Variables</b> ajuste alimentación, conminución, lixiviación y recuperación; el resultado se recalcula al instante.</li>
+          <li>En <b>Resultados</b> revise balances, pérdidas y la validación de coherencia.</li>
+          <li>En <b>Escenarios</b> guarde casos, compárelos y busque las mejores condiciones dentro de los límites.</li>
+        </ol>
+        <h3>Escenarios rápidos</h3><div class="pill-row">${PRESETS.map((p, i) => `<button class="btn sm" data-preset="${i}" title="${esc(p[1])}">${esc(p[0])}</button>`).join('')}</div></div>
+      <div class="card"><h2>Estado del modelo</h2>
+        ${kv([['Operaciones unitarias', '20'], ['Corrientes calculadas', R.streams.length], ['Parámetros editables', GS.PARAMS.length], ['Parámetros que son supuesto', sup], ['Cierre de sólidos / agua / oro', 'sí / sí / sí']])}
+        <div class="note" style="margin-top:10px">Los datos que el Proyecto no entrega (Wi, capacidades, fracciones de oro libre y sulfuro, cinética del mineral, isoterma del carbón) están marcados como <b>Supuesto</b> y se pueden editar. La lista completa está en <a href="#modelo" data-go="modelo">Modelo y datos</a>.</div>
+        ${flagHtml(R.flags.filter((f) => f.lvl !== 'info').slice(0, 3))}</div>
+    </div>`;
+  }
+
+  /* ------------------------------ FLUJO --------------------------------- */
+  function pFlujo() {
+    const modes = [['solids', 'Sólidos'], ['water', 'Agua'], ['pct', '% sólidos'], ['au', 'Oro']];
+    return `<div class="fsbar"><h1 style="margin:0 12px 0 0">Diagrama de flujo</h1>
+      <div class="seg2" role="group" aria-label="Dato en las corrientes">${modes.map((m) => `<button data-mode="${m[0]}" class="${state.labelMode === m[0] ? 'on' : ''}">${m[1]}</button>`).join('')}</div>
+      <div class="lgd">${Object.entries(GS.flow.TYPENAME).map(([k, n]) => `<span><i style="background:${GS.flow.TYPECOL[k]}"></i>${esc(n)}</span>`).join('')}</div></div>
+      <div class="fsw" id="fs"></div><div class="drawer" id="drw" style="margin-top:14px"></div>`;
+  }
+  function drawFlow() { const h = $('#fs'); if (h) GS.flow.render(h, R, { mode: state.labelMode, sel: state.sel }); }
+  function streamList(nid) {
+    const ins = R.streams.filter((s) => s.to === nid), outs = R.streams.filter((s) => s.from === nid);
+    const row = (s) => `<tr data-sel-s="${s.id}" style="cursor:pointer"><td>${esc(s.name)}</td><td class="num">${nf(s.solids, 2)}</td><td class="num">${nf(s.water, 1)}</td><td class="num">${nf(s.au, 1)}</td></tr>`;
+    const t = (l, a) => `<h4>${l}</h4>${a.length ? `<table><thead><tr><th>Corriente</th><th class="num">t/d</th><th class="num">m³/d</th><th class="num">g Au/d</th></tr></thead><tbody>${a.map(row).join('')}</tbody></table>` : '<div class="note">Sin corrientes.</div>'}`;
+    return t('Entradas', ins) + t('Salidas', outs);
+  }
+  function reveal() { const d = $('#drw'); if (d) { const b = d.getBoundingClientRect(), m = $('#main').getBoundingClientRect(); if (b.top > m.bottom - 120) d.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } }
+  function drawer() {
+    const host = $('#drw'); if (!host) return;
+    if (state.sel.kind === 's') {
+      const s = R.streams.find((x) => x.id === state.sel.id);
+      const f = GS.flow.NODE[s.from], t = GS.flow.NODE[s.to];
+      host.innerHTML = `<header><b>${esc(s.name)}</b><small>${esc(s.id)} · ${f ? f.id + '. ' + esc(f.name) : 'Origen externo'} → ${t ? t.id + '. ' + esc(t.name) : 'Destino externo'}</small></header><div class="bd">${kv([
+        ['Tipo', esc(GS.flow.TYPENAME[s.type] || s.type)], ['Sólidos', nf(s.solids, 3) + ' t/d'], ['Agua', nf(s.water, 2) + ' m³/d'], ['Sólidos en pulpa', s.water > 0 ? nf(s.pct, 1) + ' %' : '—'],
+        ['Oro', nf(s.au, 2) + ' g/d'], ['Ley', s.solids > 0 ? nf(s.gt, 2) + ' g/t' : '—']])}</div>`;
+      return;
+    }
+    const n = GS.flow.NODE[state.sel.id], st = GS.flow.status(n, R);
+    const tabs = [['res', 'Resumen'], ['esp', 'Especificaciones'], ['var', 'Variables'], ['str', 'Corrientes']];
+    let body = '';
+    if (state.dtab === 'res') body = kv(n.kpi(R).map((k) => [k[0], `${k[1]} ${k[2]}`])) + flagHtml(R.flags.filter((f) => GS.flow.status({ id: n.id }, { flags: [f] }) !== 'ok'));
+    else if (state.dtab === 'esp') body = table(['Dato', 'Valor', 'Origen'], n.specs.map((s) => [esc(s[0]), esc(s[1]), badge(s[2])]));
+    else if (state.dtab === 'var') body = n.vars && n.vars.length ? n.vars.map(ctl).join('').replace(/class="prow/g, 'style="grid-template-columns:1fr;padding:8px 0" class="prow') : '<div class="note">Este equipo no tiene variables propias.</div>';
+    else body = streamList(n.id);
+    host.innerHTML = `<header><b>${n.id}. ${esc(n.name)}</b><small>${esc(n.tag)} · ${esc(n.sub)} · <span class="chip ${st}" style="padding:0 8px">${st === 'ok' ? 'Normal' : st === 'warn' ? 'Advertencia' : 'Error'}</span></small></header>
+      <div class="tabs">${tabs.map((t) => `<button data-dtab="${t[0]}" class="${state.dtab === t[0] ? 'on' : ''}">${t[1]}</button>`).join('')}</div><div class="bd">${body}</div>`;
+  }
+
+  /* ------------------------------ VARIABLES ----------------------------- */
+  function pVariables() {
+    return `<div class="fsbar"><h1 style="margin:0 12px 0 0">Variables de operación</h1><span class="note">Los valores iniciales salen del Proyecto; el distintivo indica el origen de cada dato.</span><span class="sp" style="flex:1"></span><button class="btn" data-resetall>Restablecer todo</button></div>
+    <div class="split"><div>${GS.GROUPS.map((g, i) => { const ps = GS.PARAMS.filter((p) => p.group === g); return `<details class="grp"${i < 4 ? ' open' : ''}><summary>${esc(g)}<span class="cnt">${ps.length} variables</span></summary>${ps.map((p) => ctl(p.id)).join('')}</details>`; }).join('')}</div>
+    <div class="stick"><div class="drawer"><header><b>Resultado en vivo</b><small>Se actualiza con cada cambio</small></header><div class="bd" id="live"></div></div></div></div>`;
+  }
+  function live() {
+    const h = $('#live'); if (!h) return;
+    h.innerHTML = kv([['Recuperación CIL', nf(R.au.recCIL, 1) + ' %'], ['Recuperación global', nf(R.au.recGlobal, 1) + ' %'], ['Oro en doré', nf(R.au.dore, 0) + ' g/d'], ['Ley del relave', nf(R.au.tailGrade, 2) + ' g/t'],
+      ['Tiempo de residencia', nf(R.cil.tauTot, 1) + ' h'], ['P80 / −75 µm', nf(state.params.p80, 0) + ' µm / ' + nf(R.pass75, 0) + ' %'], ['NaCN', nf(R.reag.nacn, 1) + ' kg/d'], ['Cal', nf(R.reag.lime, 1) + ' kg/d'],
+      ['Agua fresca', nf(R.water.fresh, 1) + ' m³/d'], ['Energía', nf(R.energy.total, 0) + ' kWh/d']]) + '<h4>Alertas</h4>' +
+      (flagHtml(R.flags) || '<div class="flg ok">Sin alertas de equipo ni de proceso.</div>');
+  }
+
+  /* ------------------------------ RESULTADOS ---------------------------- */
+  function pResultados() {
+    const a = R.au, rg = R.reag;
+    const dist = [['Oro en doré', a.dore], ['Relave: oro no lixiviado', a.tailsSolids], ['Relave: oro disuelto', a.tailsSol], ['Finos de carbón', a.tailsFines], ['Pérdidas aguas abajo', a.downLoss]].filter((x) => x[1] > 1e-9);
+    const cols = [C.COL[2], C.COL[1], C.COL[3], C.COL[5], C.COL[6]];
+    const sanity = GS.sanity(state.params);
+    const cats = {}; VAL.forEach((v) => (cats[v.cat] = cats[v.cat] || []).push(v));
+    const vrow = (v) => `<div class="vrow"><span class="ic ${v.lvl}">${v.lvl === 'ok' ? '✓' : v.lvl === 'warn' ? '!' : '×'}</span><div>${esc(v.title)}<small>${esc(v.detail)}</small></div></div>`;
+    return `<h1>Resultados</h1><p class="lead">Todo se recalcula con las variables actuales. Las ecuaciones están en Modelo y datos.</p>
+    <div class="tiles">
+      ${tile('Recuperación global', nf(a.recGlobal, 2), '%', 'Oro en doré ÷ oro de cabeza', true)}
+      ${tile('Recuperación de lixiviación', nf(a.recLeach, 2), '%', 'Oro disuelto ÷ oro alimentado')}
+      ${tile('Recuperación en carbón (CIL)', nf(a.recCIL, 2), '%', 'Oro adsorbido ÷ oro alimentado')}
+      ${tile('Oro en solución (tanque 1)', nf(R.cil.solutionMgL[0], 2), 'mg/L', 'Último tanque: ' + nf(R.cil.solutionMgL[R.cil.N - 1], 3) + ' mg/L')}
+      ${tile('Producción de doré', nf(a.dore, 1), 'g Au/d', nf(a.doreKg, 3) + ' kg Au/d · ' + nf(a.oz_d, 1) + ' oz/d', true)}
+      ${tile('Producción anual', nf(a.byYear_kg, 1), 'kg Au', 'Barra doré de ' + nf(a.dore / (state.params.doreFine / 100) / 1000, 3) + ' kg/d')}
+      ${tile('Ley de relave', nf(a.tailGrade, 3), 'g/t', 'Alimentación: ' + nf(state.params.headGrade, 2) + ' g/t')}
+      ${tile('Carga del carbón', nf(R.cil.loading, 2), 'kg Au/t C', 'Máx.: ' + state.params.qMax)}
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Distribución del oro</h2><div id="c-dist"></div></div>
+      <div class="card"><h2>Pérdidas metalúrgicas</h2>${table(['Pérdida', '#g Au/d', '#% de la cabeza'], [
+        ['Oro no lixiviado en el relave (sólidos)', nf(a.tailsSolids, 2), nf((100 * a.tailsSolids) / a.head, 2)],
+        ['Oro disuelto no adsorbido (solución)', nf(a.tailsSol, 2), nf((100 * a.tailsSol) / a.head, 2)],
+        ['Finos de carbón perdidos', nf(a.tailsFines, 2), nf((100 * a.tailsFines) / a.head, 2)],
+        ['Pérdidas en desorción, EW y fundición', nf(a.downLoss, 2), nf((100 * a.downLoss) / a.head, 2)],
+        ['<b>Total</b>', '<b>' + nf(a.tails + a.downLoss, 2) + '</b>', '<b>' + nf((100 * (a.tails + a.downLoss)) / a.head, 2) + '</b>']])}
+        <div class="note" style="margin-top:8px">La mayor parte de la pérdida es oro que no se disuelve: baja con más tiempo, más cianuro, más oxígeno o molienda más fina.</div></div>
+    </div>
+    <div class="grid3">
+      <div class="card"><h2>Reactivos</h2>${kv([['NaCN', nf(rg.nacn, 2) + ' kg/d (' + nf(rg.nacnSpec, 2) + ' kg/t)'], ['… estequiométrico', nf(R.cn.stoich * 1000, 0) + ' g/d'], ['… cianicidas', nf(R.cn.side, 2) + ' kg/d'], ['… con la solución', nf(R.cn.out, 2) + ' kg/d'],
+        ['Cal (CaO)', nf(rg.lime, 1) + ' kg/d'], ['Carbón de reposición', nf(rg.carbon, 2) + ' kg/d'], ['O₂ estequiométrico', nf(rg.stoichO2 * 1000, 1) + ' g/d'], ['SO₂ (destrucción)', nf(R.detox.so2, 1) + ' kg/d'], ['Metabisulfito', nf(R.detox.smbs, 1) + ' kg/d'], ['NaOH elución', nf(R.elu.naoh_kg, 1) + ' kg/d'], ['Xantato / MIBC', nf(rg.xanthate, 2) + ' / ' + nf(rg.mibc, 2) + ' kg/d'], ['Floculante', nf(rg.floc, 2) + ' kg/d']])}</div>
+      <div class="card"><h2>Agua</h2>${kv([['Demanda total', nf(R.water.demand, 1) + ' m³/d'], ['Recuperable', nf(R.water.recov, 1) + ' m³/d'], ['Recirculada', nf(R.water.recycled, 1) + ' m³/d'], ['Agua fresca', nf(R.water.fresh, 1) + ' m³/d'], ['Fresca por tonelada', nf(R.water.freshPerT, 2) + ' m³/t'], ['Purga', nf(R.water.purge, 1) + ' m³/d'], ['Humedad del mineral', nf(R.water.Wore, 2) + ' m³/d'], ['Agua en el relave', nf(R.water.Wtc, 2) + ' m³/d'], ['Cierre del balance', nf(R.water.closure, 6) + ' m³/d']])}</div>
+      <div class="card"><h2>Energía</h2><div class="tw">${table(['Etapa', '#kWh/d'], R.energy.items.map((e) => [esc(e.k) + ' ' + badge(e.src), nf(e.v, 0)]).concat([['<b>Total</b>', '<b>' + nf(R.energy.total, 0) + '</b>']]))}</div>
+        <div class="note" style="margin-top:6px">${nf(R.energy.perT, 1)} kWh/t · ${nf(R.energy.perOz, 0)} kWh/oz</div></div>
+    </div>
+    <div class="card"><h2>Corrientes de proceso</h2>${table(['Corriente', 'Origen → destino', '#Sólidos t/d', '#Agua m³/d', '#% sólidos', '#Oro g/d', '#Ley g/t'], R.streams.map((s) => {
+      const f = GS.flow.NODE[s.from], t = GS.flow.NODE[s.to];
+      return [`<b>${s.id}</b> ${esc(s.name)}`, `${f ? f.id : 'ext.'} → ${t ? t.id : 'ext.'}`, nf(s.solids, 3), nf(s.water, 2), s.water > 0 && s.solids > 0 ? nf(s.pct, 1) : '–', nf(s.au, 2), s.solids > 0 ? nf(s.gt, 2) : '–'];
+    }))}</div>
+    <div class="card"><h2>Validación</h2><p class="note" style="margin-top:0">Verifica cierres de balance, conservación del oro, unidades, capacidades y rangos del Proyecto.</p>
+      ${flagHtml(R.flags)}<div class="grid2">${Object.entries(cats).map(([k, v]) => `<div><h3>${esc(k)}</h3>${v.map(vrow).join('')}</div>`).join('')}
+      <div><h3>Prueba de dirección (cada variable +10 %)</h3>${sanity.map((s) => `<div class="vrow"><span class="ic ${s.ok ? 'ok' : 'error'}">${s.ok ? '✓' : '×'}</span><div>${esc(s.text)}<small>Δ = ${nf(s.delta, 3)}</small></div></div>`).join('')}</div></div></div>`;
+  }
+  function afterResultados() {
+    const a = R.au, cols = [C.COL[2], C.COL[1], C.COL[3], C.COL[5], C.COL[6]];
+    const dist = [['Oro en doré', a.dore], ['Relave: oro no lixiviado', a.tailsSolids], ['Relave: oro disuelto', a.tailsSol], ['Finos de carbón', a.tailsFines], ['Pérdidas aguas abajo', a.downLoss]];
+    C.stack($('#c-dist'), { items: dist.map((d, i) => ({ name: d[0], val: d[1], color: cols[i] })), unit: 'g/d', d: 2 });
+  }
+
+  /* ------------------------------ GRÁFICOS ------------------------------ */
+  const CH = [];
+  function pGraficos() {
+    CH.length = 0;
+    const p = state.params, P = (id) => PB[id];
+    const mk = (title, cfg) => { CH.push(cfg); return `<div class="card"><div class="cbox" id="ch${CH.length - 1}"></div></div>`; };
+    const rec = (r) => r.au.recGlobal;
+    const taus = range(6, 48, 15), nac = range(150, 700, 12), p80s = range(P('p80').min, P('p80').max, 12), feeds = range(10, 100, 16);
+    const bT = { tauMode: 'objetivo' };
+    CH.push({ type: 'line', title: 'Recuperación global vs. tiempo de residencia', xlab: 'Tiempo de residencia total (h)', ylab: 'Recuperación global (%)', series: [{ name: 'Recuperación global', color: C.COL[0], pts: sweep('tauTarget', taus, rec, bT) }], marker: { x: R.cil.tauTot, y: R.au.recGlobal, label: 'Punto actual' }, bands: [{ x0: 24, x1: 48, label: 'Rango del Proyecto' }], yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Recuperación global vs. concentración de NaCN', xlab: 'NaCN (ppm = g/m³)', ylab: 'Recuperación global (%)', series: [{ name: 'Recuperación global', color: C.COL[1], pts: sweep('nacn', nac, rec) }], marker: { x: p.nacn, y: R.au.recGlobal, label: 'Punto actual' }, bands: [{ x0: 300, x1: 500, label: 'Rango §3.1' }], yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Efecto de la granulometría (P80)', xlab: 'P80 de molienda (µm)', ylab: 'Recuperación global (%)', series: [{ name: 'Recuperación global', color: C.COL[2], pts: sweep('p80', p80s, rec) }], marker: { x: p.p80, y: R.au.recGlobal, label: 'Punto actual' }, bands: [{ x0: 75, x1: 150, label: 'Rango del Proyecto' }], yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Energía de molienda vs. P80', xlab: 'P80 de molienda (µm)', ylab: 'Energía de molienda (kWh/t)', series: [{ name: 'Molienda (Bond)', color: C.COL[3], pts: sweep('p80', p80s, (r) => r.mill.kWhd / r.p.feedTpd) }], marker: { x: p.p80, y: R.mill.kWhd / p.feedTpd, label: 'Punto actual' }, yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Producción de oro vs. alimentación', xlab: 'Alimentación (t/d)', ylab: 'Oro en doré (g/d)', series: [{ name: 'Oro en doré', color: C.COL[0], pts: sweep('feedTpd', feeds, (r) => r.au.dore) }], marker: { x: p.feedTpd, y: R.au.dore, label: 'Punto actual' }, yfmt: (v) => nf(v, 0), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Recuperación global vs. alimentación (tanques instalados)', xlab: 'Alimentación (t/d)', ylab: 'Recuperación global (%)', series: [{ name: 'Recuperación global', color: C.COL[4], pts: sweep('feedTpd', feeds, rec) }], marker: { x: p.feedTpd, y: R.au.recGlobal, label: 'Punto actual' }, yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Recuperación vs. oxígeno disuelto', xlab: 'O₂ disuelto (mg/L)', ylab: 'Recuperación global (%)', series: [{ name: 'Aire (21 % O₂)', color: C.COL[0], pts: sweep('dox', range(2, 8.2, 10), rec, { oxidant: 'aire' }) }, { name: 'Oxígeno (' + p.o2Purity + ' %)', color: C.COL[1], pts: sweep('dox', range(2, 20, 10), rec, { oxidant: 'oxígeno' }) }], marker: { x: p.dox, y: R.au.recGlobal, label: 'Punto actual' }, yfmt: (v) => nf(v, 1), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Consumo de NaCN vs. concentración', xlab: 'NaCN (ppm = g/m³)', ylab: 'NaCN consumido (kg/d)', series: [{ name: 'NaCN', color: C.COL[3], pts: sweep('nacn', nac, (r) => r.reag.nacn) }], marker: { x: p.nacn, y: R.reag.nacn, label: 'Punto actual' }, yfmt: (v) => nf(v, 0), xfmt: (v) => nf(v, 0) });
+    CH.push({ type: 'line', title: 'Avance de la lixiviación por tanque', xlab: 'Tanque (número)', ylab: 'Oro lixiviado acumulado (%)', series: [{ name: 'Oro lixiviado', color: C.COL[2], pts: R.cil.Cs.map((c, i) => [i, 100 * (1 - c / R.cil.Cs[0])]) }], xfmt: (v) => nf(v, 0), yfmt: (v) => nf(v, 0), h: 300 });
+    const ps = R.psd.classes; let acc = 0;
+    CH.push({ type: 'line', title: 'Distribución granulométrica del molino', xlab: 'Tamaño (µm)', ylab: '% pasante acumulado', series: [{ name: 'Pasante', color: C.COL[5], pts: ps.map((c) => { acc += c.w; return [c.hi, 100 * acc]; }) }], yfmt: (v) => nf(v, 0), xfmt: (v) => nf(v, 0), ymin: 0, ymax: 100 });
+    CH.push({ type: 'stack' });
+    return `<h1>Gráficos</h1><p class="lead">Cada curva corre el modelo completo variando una sola variable; el resto queda en los valores actuales. El punto marca la condición actual y la banda sombreada, el rango del Proyecto.</p>
+      <div class="grid2">${CH.map((c, i) => `<div class="card"><div class="cbox" id="ch${i}"></div></div>`).join('')}</div>`;
+  }
+  function afterGraficos() {
+    const a = R.au, cols = [C.COL[2], C.COL[1], C.COL[3], C.COL[5], C.COL[6]];
+    CH.forEach((c, i) => {
+      const h = $('#ch' + i); if (!h) return;
+      if (c.type === 'line') C.line(h, c);
+      else C.stack(h, { title: 'Distribución del oro entre corrientes', unit: 'g/d', d: 2, items: [['Doré', a.dore], ['Relave (sólidos)', a.tailsSolids], ['Relave (solución)', a.tailsSol], ['Finos de carbón', a.tailsFines], ['Pérdidas aguas abajo', a.downLoss]].map((d, k) => ({ name: d[0], val: d[1], color: cols[k] })) });
+    });
+  }
+
+  /* ------------------------------ ESCENARIOS ---------------------------- */
+  const METRICS = [
+    ['Recuperación global', '%', (r) => r.au.recGlobal, 2, 1], ['Recuperación CIL', '%', (r) => r.au.recCIL, 2, 1], ['Oro en doré', 'g/d', (r) => r.au.dore, 1, 1],
+    ['Producción anual', 'kg/año', (r) => r.au.byYear_kg, 1, 1], ['Ley del relave', 'g/t', (r) => r.au.tailGrade, 3, -1], ['Tiempo de residencia', 'h', (r) => r.cil.tauTot, 1, 0],
+    ['NaCN', 'kg/d', (r) => r.reag.nacn, 1, -1], ['NaCN por oro producido', 'kg/g Au', (r) => r.reag.nacn / Math.max(1e-9, r.au.dore), 3, -1], ['Cal', 'kg/d', (r) => r.reag.lime, 1, -1],
+    ['Agua fresca', 'm³/d', (r) => r.water.fresh, 1, -1], ['Energía total', 'kWh/d', (r) => r.energy.total, 0, -1], ['Energía por onza', 'kWh/oz', (r) => r.energy.perOz, 0, -1],
+    ['Utilización del molino', '%', (r) => r.mill.util * 100, 0, 0], ['Utilización de la trituradora', '%', (r) => r.crush.util * 100, 0, 0],
+  ];
+  const full = (sc) => Object.assign(GS.defaults(), sc.params);
+  const cols = () => [{ id: '__cur', name: 'Actual (sin guardar)', params: state.params }].concat(state.scenarios.filter((s) => state.compare.includes(s.id)));
+  function diffs(p) { return Object.keys(PB).filter((k) => p[k] !== PB[k].def).map((k) => `${PB[k].label}: ${p[k]} ${PB[k].unit}`); }
+  function pEscenarios() {
+    const sc = state.scenarios;
+    return `<h1>Escenarios</h1><p class="lead">Guarde las variables actuales como escenario, compare varios y busque las mejores condiciones. Los escenarios quedan en este navegador; use Exportar para llevarlos a otro equipo.</p>
+    <div class="grid2"><div class="card"><h2>Casos de partida</h2><div class="pill-row">${PRESETS.map((p, i) => `<button class="btn sm" data-preset="${i}" title="${esc(p[1])}">${esc(p[0])}</button>`).join('')}</div>
+      <h3>Guardar el estado actual</h3><div class="pill-row"><input id="scn-name" placeholder="Nombre del escenario" style="padding:6px 9px;border:1px solid var(--line);border-radius:7px;min-width:220px"><button class="btn pri" data-save>Guardar escenario</button></div>
+      <h3>Escenarios guardados (${sc.length})</h3>${sc.length ? sc.map((s) => `<div class="scn${s.id === state.cur ? ' cur' : ''}"><input type="checkbox" data-cmp="${s.id}" ${state.compare.includes(s.id) ? 'checked' : ''} aria-label="Comparar ${esc(s.name)}"><div><b>${esc(s.name)}</b><div class="note">${esc(s.preset || diffs(full(s)).slice(0, 3).join(' · ') || 'Valores de diseño')}</div></div>
+        <div class="pill-row"><button class="btn sm" data-load="${s.id}">Cargar</button><button class="btn sm" data-ren="${s.id}">Renombrar</button><button class="btn sm" data-dup="${s.id}">Duplicar</button><button class="btn sm" data-del="${s.id}">Borrar</button></div></div>`).join('') : '<div class="empty">Aún no hay escenarios guardados.</div>'}
+      <div class="pill-row" style="margin-top:10px"><button class="btn sm" data-exp>Exportar JSON</button><label class="btn sm" style="cursor:pointer">Importar JSON<input type="file" id="imp" accept=".json,application/json" hidden></label></div></div>
+    <div class="card"><h2>Buscar mejores condiciones</h2><p class="note" style="margin-top:0">Recorre NaCN, pH, P80, sólidos del CIL y O₂ disuelto dentro de los rangos del Proyecto. Descarta casos con errores de equipo, sin saturación de O₂ o con CNWAD sobre el límite.</p>
+      <div class="pill-row"><select id="opt-obj"><option value="oro"${state.optObj === 'oro' ? ' selected' : ''}>Maximizar oro producido</option><option value="cn"${state.optObj === 'cn' ? ' selected' : ''}>Minimizar NaCN por oro</option><option value="energy"${state.optObj === 'energy' ? ' selected' : ''}>Maximizar oro por energía</option></select>
+      <label class="note">Recuperación mínima <input id="opt-min" type="number" value="${state.optMin}" min="50" max="99" style="width:64px;padding:4px"> %</label><button class="btn pri" data-opt>Buscar</button></div>
+      <div id="opt-out" style="margin-top:10px">${optHtml()}</div></div></div>
+    <div class="card"><h2>Comparación</h2><div id="cmp"></div></div>`;
+  }
+  function optHtml() {
+    if (!state.opt) return '<div class="note">Elija un objetivo y pulse Buscar.</div>';
+    if (!state.opt.length) return '<div class="flg warn">Ninguna combinación cumple los límites; reduzca la recuperación mínima.</div>';
+    return table(['Variables', '#Rec. global %', '#Oro g/d', '#NaCN kg/d', ''], state.opt.map((o, i) => [esc(`NaCN ${o.vars.nacn} · pH ${o.vars.ph} · P80 ${o.vars.p80} · ${o.vars.cilSolids} % sól. · DO ${o.vars.dox}`), nf(o.r.au.recGlobal, 2), nf(o.r.au.dore, 1), nf(o.r.reag.nacn, 1), `<button class="btn sm" data-optap="${i}">Aplicar</button> <button class="btn sm" data-optsv="${i}">Guardar</button>`]));
+  }
+  function afterEscenarios() {
+    const cs = cols(), host = $('#cmp'); if (!host) return;
+    const rs = cs.map((c) => GS.run(Object.assign(GS.defaults(), c.params)));
+    if (cs.length < 2) { host.innerHTML = '<div class="empty">Marque uno o más escenarios guardados para compararlos con el estado actual.</div>'; return; }
+    const head = ['Indicador'].concat(cs.map((c) => c.name));
+    const dlt = (m, v, b) => { if (v === b) return ''; const d = v - b, good = m[4] === 0 ? null : (d > 0) === (m[4] > 0); return ` <small class="dl ${good === null ? 'z' : good ? '' : 'neg'}">${d > 0 ? '+' : ''}${nf(d, m[3])}</small>`; };
+    const rows = METRICS.map((m) => [`${m[0]} <span class="tag">${m[1]}</span>`].concat(rs.map((r, i) => nf(m[2](r), m[3]) + (i ? dlt(m, m[2](r), m[2](rs[0])) : ''))));
+    rows.push(['Variables distintas del diseño'].concat(cs.map((c) => `<span class="note">${esc(diffs(full(c)).join('; ') || 'ninguna')}</span>`)));
+    rows.push(['Alertas'].concat(rs.map((r) => (r.flags.filter((f) => f.lvl !== 'info').map((f) => esc(f.id)).join(', ') || '—'))));
+    host.innerHTML = `<div id="cmp-t">${table(head, rows)}</div><div class="grid2" style="margin-top:12px"><div class="cbox" id="cmp-a"></div><div class="cbox" id="cmp-b"></div></div>`;
+    const names = cs.map((c) => c.name);
+    C.bars($('#cmp-a'), { title: 'Recuperación global (%)', cats: names, series: [{ name: 'Recuperación global', color: C.COL[0], vals: rs.map((r) => r.au.recGlobal) }], yfmt: (v) => nf(v, 1), h: 260 });
+    C.bars($('#cmp-b'), { title: 'Oro en doré (g/d)', cats: names, series: [{ name: 'Oro en doré', color: C.COL[2], vals: rs.map((r) => r.au.dore) }], yfmt: (v) => nf(v, 0), h: 260 });
+  }
+  function addScenario(name, params, preset) {
+    const s = { id: 's' + Date.now().toString(36) + Math.floor(Math.random() * 1e3), name, params: Object.assign({}, params), ts: Date.now(), preset };
+    state.scenarios.push(s); state.compare.push(s.id); store.set(KEY_S, state.scenarios); return s;
+  }
+
+  /* ------------------------------ EQUIPOS ------------------------------- */
+  function pEquipos() {
+    const N = GS.flow.NODES.slice().sort((a, b) => a.id - b.id);
+    return `<h1>Equipos</h1><p class="lead">Las 20 operaciones del Proyecto (Fig. 1). Haga clic en una fila para abrirla en el diagrama.</p>
+      ${table(['N.º', 'Equipo', 'Código', 'Estado', 'Indicadores', 'Especificaciones del documento'], N.map((n) => {
+        const st = GS.flow.status(n, R);
+        return [`<b>${n.id}</b>`, `<a href="#flujo" data-node="${n.id}"><b>${esc(n.name)}</b></a><div class="note">${esc(n.sub)}</div>`, `<span class="tag">${esc(n.tag)}</span>`, `<span class="chip ${st}" style="padding:0 8px">${st === 'ok' ? 'Normal' : st === 'warn' ? 'Advertencia' : 'Error'}</span>`,
+          n.kpi(R).map((k) => `${esc(k[0])} <b>${esc(k[1])}</b> ${esc(k[2])}`).join('<br>'), n.specs.map((s) => `${esc(s[0])}: ${esc(s[1])} ${badge(s[2])}`).join('<br>')];
+      }))}`;
+  }
+
+  /* ------------------------------ MODELO Y DATOS ------------------------ */
+  function pModelo() {
+    const D = GS.DOCS, ver = GS.verifyDesign();
+    return `<h1>Modelo y datos</h1><p class="lead">Qué dicen los documentos, qué falta, qué se contradice y con qué ecuaciones se calcula. Ningún valor de recuperación se fija a mano: la cinética se calibra con el único punto del Proyecto (90 % a 24 h) y responde a las variables.</p>
+    <div class="card"><h2>Documentos usados</h2>${table(['Documento', 'Aporte'], D.sources.map((s) => [`<b>${esc(s[0])}</b>`, esc(s[1])]))}</div>
+    <div class="card"><h2>Comprobación contra el diseño del Proyecto</h2>${table(['Magnitud', '#Proyecto', '#Modelo', 'Unidad', '#Error', 'Estado'], ver.map((v) => [esc(v.name), nf(v.doc, 2), nf(v.model, 2), esc(v.unit), nf(v.err * 100, 2) + ' %', `<span class="chip ${v.ok ? 'ok' : 'warn'}" style="padding:0 8px">${v.ok ? 'Coincide' : 'Revisar'}</span>`]))}</div>
+    <div class="card"><h2>Contradicciones entre documentos</h2>${table(['Tema', 'Qué dicen', 'Cómo se resolvió'], D.contradictions.map((c) => [`<b>${esc(c[0])}</b>`, esc(c[1]), esc(c[2])]))}</div>
+    <div class="grid2"><div class="card"><h2>Datos que faltan</h2><ul class="note" style="padding-left:18px;line-height:1.6;margin:0">${D.missing.map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>
+    <div class="card"><h2>Limitaciones conocidas</h2><ul class="note" style="padding-left:18px;line-height:1.6;margin:0">
+      <li>Con oxígeno el modelo llega a ≈ 93 %, no a 96 %: el efecto del nitrato de plomo no se modela porque los documentos no dan datos cinéticos.</li>
+      <li>La constante cinética K se calibra a un punto; fuera del rango 24–48 h, 300–500 ppm y 75–150 µm las tendencias son cualitativas.</li>
+      <li>La adsorción usa cinética lineal con actividad (1 − q/q<sub>máx</sub>), no una isoterma ajustada.</li>
+      <li>Gravimetría y flotación quedan en cero por defecto (caso fiel al Proyecto); se activan con las fracciones de oro libre y en sulfuros.</li></ul></div></div>
+    <div class="card"><h2>Parámetros que son supuesto</h2>${table(['Parámetro', '#Valor', 'Unidad', 'Motivo'], GS.PARAMS.filter((p) => p.src === 'SUP').map((p) => [esc(p.label), nf(p.def, 2), esc(p.unit), esc(p.ref || '')]))}</div>
+    <div class="card"><h2>Ecuaciones</h2>${D.eqs.map((g) => `<h3>${esc(g.sec)}</h3>${g.items.map((it) => `<div style="margin-bottom:12px"><b>${esc(it.t)}</b><div class="eq">${esc(it.e)}</div><div class="note"><b>Fuente:</b> ${esc(it.s)}<br><b>Nota:</b> ${esc(it.a)}</div></div>`).join('')}`).join('')}</div>`;
+  }
+
+  /* ------------------------------ render -------------------------------- */
+  const VIEW = { inicio: [pInicio], flujo: [pFlujo, () => { drawFlow(); drawer(); }], variables: [pVariables, live], resultados: [pResultados, afterResultados], graficos: [pGraficos, afterGraficos], escenarios: [pEscenarios, afterEscenarios], equipos: [pEquipos], modelo: [pModelo] };
+  function nav() {
+    $('#nav').innerHTML = PAGES.map((p) => `<button data-go="${p[0]}" class="${state.page === p[0] ? 'on' : ''}" ${state.page === p[0] ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24"><path d="${p[2]}"/></svg><span>${p[1]}</span></button>`).join('');
+  }
+  function render() {
+    const m = $('#main'), sc = m.scrollTop, v = VIEW[state.page];
+    m.innerHTML = v[0](); if (v[1]) v[1](); nav(); topbar();
+    m.scrollTop = sc;
+  }
+  function go(page) { state.page = page; if (root.location.hash !== '#' + page) root.history.replaceState(null, '', '#' + page); render(); $('#main').scrollTop = 0; }
+  /* actualización parcial mientras se arrastra un control */
+  let raf = 0;
+  function onParam() {
+    if (raf) return;
+    raf = root.requestAnimationFrame(() => {
+      raf = 0; compute(); topbar();
+      if (state.page === 'variables') live();
+      else if (state.page === 'flujo') { drawFlow(); if (state.dtab !== 'var') drawer(); }
+      else if (state.page === 'inicio' || state.page === 'equipos') render();
+    });
+  }
+  function setParam(id, v) {
+    const p = PB[id]; if (!p) return;
+    state.params[id] = v;
+    $$(`[data-row="${id}"]`).forEach((row) => row.classList.toggle('ed', v !== p.def));
+    $$(`[data-p="${id}"]`).forEach((el) => { if (el !== doc.activeElement && el.value !== String(v)) el.value = v; });
+    persist(); onParam();
+  }
+  function applySet(set, name) {
+    state.params = Object.assign(GS.defaults(), set); persist(); compute();
+    state.cur = null; render(); toast(name ? 'Cargado: ' + name : 'Valores aplicados');
+  }
+  function toast(t) {
+    let e = $('#toast'); if (!e) { e = doc.createElement('div'); e.id = 'toast'; e.setAttribute('role', 'status'); e.style.cssText = 'position:fixed;right:18px;bottom:18px;background:#1b2430;color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;z-index:50;transition:opacity .3s'; doc.body.appendChild(e); }
+    e.textContent = t; e.style.opacity = 1; clearTimeout(e._t); e._t = setTimeout(() => (e.style.opacity = 0), 2200);
+  }
+
+  /* ------------------------------ eventos ------------------------------- */
+  function bind() {
+    doc.addEventListener('input', (e) => {
+      const el = e.target, id = el.dataset && el.dataset.p; if (!id) return;
+      if (el.tagName === 'SELECT') return;
+      const v = parseFloat(el.value); if (!isFinite(v)) return;
+      const p = PB[id]; setParam(id, p.int ? Math.round(clamp(v, p)) : clamp(v, p));
+    });
+    doc.addEventListener('change', (e) => {
+      const el = e.target;
+      if (el.dataset && el.dataset.p) { const p = PB[el.dataset.p]; if (el.tagName === 'SELECT') { setParam(p.id, el.value); render(); } else { const v = clamp(parseFloat(el.value) || p.def, p); setParam(p.id, p.int ? Math.round(v) : v); el.value = state.params[p.id]; } }
+      else if (el.id === 'imp') importJson(el.files[0]);
+      else if (el.dataset && el.dataset.cmp) { const i = state.compare.indexOf(el.dataset.cmp); if (el.checked && i < 0) state.compare.push(el.dataset.cmp); else if (!el.checked && i >= 0) state.compare.splice(i, 1); afterEscenarios(); }
+      else if (el.id === 'opt-obj') state.optObj = el.value;
+      else if (el.id === 'opt-min') state.optMin = parseFloat(el.value) || 85;
+    });
+    doc.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-go],[data-mode],[data-dtab],[data-reset],[data-resetall],[data-preset],[data-save],[data-load],[data-ren],[data-dup],[data-del],[data-exp],[data-opt],[data-optap],[data-optsv],[data-node],[data-sel-s],.node,.strm');
+      if (!t) return;
+      const d = t.dataset;
+      if (d.go) { e.preventDefault(); go(d.go); }
+      else if (d.node) { e.preventDefault(); state.sel = { kind: 'n', id: +d.node }; state.dtab = 'res'; go('flujo'); }
+      else if (d.mode) { state.labelMode = d.mode; $$('[data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === d.mode)); drawFlow(); }
+      else if (d.dtab) { state.dtab = d.dtab; drawer(); }
+      else if (d.selS) { state.sel = { kind: 's', id: d.selS }; drawFlow(); drawer(); }
+      else if (t.classList.contains('node')) { state.sel = { kind: 'n', id: +t.dataset.n }; drawFlow(); drawer(); reveal(); }
+      else if (t.classList.contains('strm')) { state.sel = { kind: 's', id: t.dataset.s }; drawFlow(); drawer(); reveal(); }
+      else if (d.reset) { const p = PB[d.reset]; setParam(p.id, p.def); $$(`[data-p="${p.id}"]`).forEach((el) => (el.value = p.def)); if (p.choices) render(); }
+      else if (d.resetall !== undefined) applySet({}, 'valores de diseño');
+      else if (d.preset) { const p = PRESETS[+d.preset]; applySet(p[2], p[0]); state.presetName = p[0]; }
+      else if (d.save !== undefined) { const n = ($('#scn-name').value || '').trim() || 'Escenario ' + (state.scenarios.length + 1); const s = addScenario(n, state.params); state.cur = s.id; render(); toast('Guardado: ' + n); }
+      else if (d.load) { const s = state.scenarios.find((x) => x.id === d.load); applySet(s.params, s.name); state.cur = s.id; render(); }
+      else if (d.ren) { const s = state.scenarios.find((x) => x.id === d.ren), n = root.prompt('Nuevo nombre', s.name); if (n && n.trim()) { s.name = n.trim(); store.set(KEY_S, state.scenarios); render(); } }
+      else if (d.dup) { const s = state.scenarios.find((x) => x.id === d.dup); addScenario(s.name + ' (copia)', s.params); render(); }
+      else if (d.del) { const s = state.scenarios.find((x) => x.id === d.del); if (root.confirm('¿Borrar "' + s.name + '"?')) { state.scenarios = state.scenarios.filter((x) => x.id !== d.del); state.compare = state.compare.filter((x) => x !== d.del); store.set(KEY_S, state.scenarios); render(); } }
+      else if (d.exp !== undefined) exportJson();
+      else if (d.opt !== undefined) { state.opt = GS.optimize(Object.assign({}, state.params, { __minRec: state.optMin }), state.optObj); $('#opt-out').innerHTML = optHtml(); }
+      else if (d.optap) { const o = state.opt[+d.optap]; applySet(Object.assign({}, state.params, o.vars), 'resultado de la búsqueda'); }
+      else if (d.optsv) { const o = state.opt[+d.optsv]; addScenario('Óptimo ' + (state.optObj === 'oro' ? 'oro' : state.optObj === 'cn' ? 'NaCN' : 'energía') + ' ' + (+d.optsv + 1), Object.assign({}, state.params, o.vars)); render(); toast('Escenario guardado'); }
+    });
+    doc.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('node')) { e.preventDefault(); e.target.dispatchEvent(new root.MouseEvent('click', { bubbles: true })); } });
+  }
+  function exportJson() {
+    const blob = new root.Blob([JSON.stringify({ version: 1, actual: state.params, escenarios: state.scenarios }, null, 2)], { type: 'application/json' });
+    const a = doc.createElement('a'); a.href = root.URL.createObjectURL(blob); a.download = 'escenarios-simulador-oro.json'; a.click(); setTimeout(() => root.URL.revokeObjectURL(a.href), 500);
+  }
+  function importJson(f) {
+    if (!f) return;
+    const rd = new root.FileReader();
+    rd.onload = () => { try { const j = JSON.parse(rd.result); const list = (j.escenarios || []).filter((s) => s && s.params); list.forEach((s) => addScenario(s.name || 'Importado', s.params)); if (j.actual) { state.params = Object.assign(GS.defaults(), j.actual); persist(); compute(); } render(); toast(list.length + ' escenarios importados'); } catch (err) { toast('El archivo no es un JSON válido'); } };
+    rd.readAsText(f);
+  }
+
+  function start() {
+    const h = (root.location.hash || '').slice(1); if (VIEW[h]) state.page = h;
+    compute(); bind(); render();
+    root.addEventListener('hashchange', () => { const x = root.location.hash.slice(1); if (VIEW[x] && x !== state.page) go(x); });
+  }
+  GS.ui = { state, start, compute, render, go };
+  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start); else start();
+})(typeof globalThis !== 'undefined' ? globalThis : window);
+
+</script>
+</body>
+</html>

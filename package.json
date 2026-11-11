@@ -1,0 +1,2 @@
+{ "name": "simulador-planta-oro-cil", "version": "1.0.0", "private": true,
+  "scripts": { "test": "node tests/run_tests.js", "build": "python3 build.py" } }
